@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { AddressInfo } from "node:net";
-import chokidar from "chokidar";
 import type { Plugin } from "vite";
 import { buildManifest } from "./buildManifest";
 import { dir, isDEV, isFirefox } from "./constants";
@@ -9,9 +8,9 @@ import { dir, isDEV, isFirefox } from "./constants";
 export function extensionManifestPlugin(): Plugin {
   let views: string[] = [];
   let port = 5173;
-  let watching = false;
 
   const manifestPath = resolve(dir, "manifest.json");
+  const srcPath = resolve("src");
 
   function writeManifest(flag: "wx" | "w" = "w") {
     const data = JSON.stringify(
@@ -73,13 +72,10 @@ export function extensionManifestPlugin(): Plugin {
         writeViews();
       });
 
-      if (watching) return;
-
-      watching = true;
-
-      chokidar
-        .watch(resolve("src/**/*.html"))
-        .on("change", () => writeViews());
+      // Vite owns this watcher and closes it on shutdown.
+      server.watcher.on("change", (file) => {
+        if (file.startsWith(srcPath) && file.endsWith(".html")) writeViews();
+      });
     },
   };
 }

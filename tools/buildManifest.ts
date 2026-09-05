@@ -57,6 +57,9 @@ export function buildManifest({
       browser_specific_settings: {
         gecko: {
           id: extension.firefoxId,
+          // Required for AMO submissions since 2025-11-03. Tabitha stores
+          // everything locally, so nothing is collected.
+          data_collection_permissions: { required: ["none"] },
         },
       },
     }),

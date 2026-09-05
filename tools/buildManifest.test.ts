@@ -18,7 +18,10 @@ describe("buildManifest", () => {
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.background).toHaveProperty("scripts");
     expect(manifest.browser_specific_settings).toEqual({
-      gecko: { id: "tabitha@tabitha" },
+      gecko: {
+        id: "tabitha@tabitha",
+        data_collection_permissions: { required: ["none"] },
+      },
     });
     expect(manifest.permissions).toContain("cookies");
     expect(manifest.permissions).not.toContain("system.display");
