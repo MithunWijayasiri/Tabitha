@@ -51,7 +51,9 @@ export function extensionManifestPlugin(): Plugin {
 
       views = Object.values(input)
         .filter((path) => path.endsWith("/index.html"))
-        .map((path) => path.replace(/^src\//, "").replace(/\/index\.html$/, ""));
+        .map((path) =>
+          path.replace(/^src\//, "").replace(/\/index\.html$/, ""),
+        );
     },
 
     buildStart() {

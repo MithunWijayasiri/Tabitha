@@ -48,7 +48,9 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     ]);
 
     if (count > autoSaveMaxSessions)
-      await sessionStore.deleteLastAutosavedSession(count - autoSaveMaxSessions);
+      await sessionStore.deleteLastAutosavedSession(
+        count - autoSaveMaxSessions,
+      );
 
     await sessionStore.iterateSessions("dateSaved", (sessions) => {
       sendMessage({ message: "dbChanged", sessions, selectedId: selectionId });

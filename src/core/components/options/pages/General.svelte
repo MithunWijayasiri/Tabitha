@@ -14,7 +14,10 @@
     min: number,
     max: number,
   ) {
-    const value = Math.min(Math.max(Number(event.currentTarget.value), min), max);
+    const value = Math.min(
+      Math.max(Number(event.currentTarget.value), min),
+      max,
+    );
 
     event.currentTarget.value = String(value);
 
@@ -60,7 +63,8 @@
   />
 
   <label class="flex flex-col gap-2 border-t border-line py-3">
-    <span class="text-sm font-medium text-ink">Only save matching addresses</span
+    <span class="text-sm font-medium text-ink"
+      >Only save matching addresses</span
     >
     <span class="text-xs text-ink-faint"
       >One match pattern per line. Leave empty to save every tab.</span
@@ -75,8 +79,7 @@ file:///*/*`}
       class="mt-1 resize-none rounded border border-line bg-panel-alt p-2.5 font-mono text-xs text-ink outline-none placeholder:text-ink-faint focus:border-accent"
       inputmode="url"
       value={urlList}
-      on:change={(ev) => handleFilterListChange(ev, urlList)}
-    ></textarea>
+      on:change={(ev) => handleFilterListChange(ev, urlList)}></textarea>
   </label>
 </Section>
 
@@ -101,7 +104,9 @@ file:///*/*`}
       : 'opacity-50'}"
   >
     <span class="flex-1">
-      <span class="block text-sm font-medium text-ink">Automatic saves to keep</span>
+      <span class="block text-sm font-medium text-ink"
+        >Automatic saves to keep</span
+      >
       <span class="mt-1 block text-xs text-ink-faint"
         >The oldest one is dropped when the limit is reached. Maximum 15.</span
       >
@@ -112,8 +117,7 @@ file:///*/*`}
       min="1"
       max="15"
       value={$settings.autoSaveMaxSessions}
-      on:change={(event) =>
-        clampSetting(event, "autoSaveMaxSessions", 1, 15)}
+      on:change={(event) => clampSetting(event, "autoSaveMaxSessions", 1, 15)}
       disabled={!$settings.autoSave}
     />
   </label>
@@ -124,7 +128,9 @@ file:///*/*`}
       : 'opacity-50'}"
   >
     <span class="flex-1">
-      <span class="block text-sm font-medium text-ink">Minutes between saves</span>
+      <span class="block text-sm font-medium text-ink"
+        >Minutes between saves</span
+      >
       <span class="mt-1 block text-xs text-ink-faint">One minute or more.</span>
     </span>
     <input
