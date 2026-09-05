@@ -1,0 +1,2266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tabitha — Save. Manage. Restore.</title>
+    <meta
+      name="description"
+      content="Save your open tabs with one click. Get them back whenever you want. Works fine with hundreds of tabs, and nothing ever leaves your browser."
+    />
+    <meta name="theme-color" content="#2C7A6B" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Tabitha — Save. Manage. Restore." />
+    <meta
+      property="og:description"
+      content="Save your open tabs. Get them back whenever you want."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/MithunWijayasiri/Tabitha/main/assets/github-banner.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%230E5D51'/%3E%3Cg transform='translate(64,64) scale(0.78) translate(-64,-64)'%3E%3Crect x='24' y='22' width='80' height='22' rx='6' fill='%2360CDB5'/%3E%3Crect x='16' y='52' width='96' height='22' rx='6' fill='%23FAFAF5'/%3E%3Crect x='8' y='82' width='112' height='22' rx='6' fill='%23FAFAF5'/%3E%3C/g%3E%3C/svg%3E"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lobster+Two:ital,wght@1,700&family=Oswald:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+
+    <style>
+      /* ============================================================
+         Tabitha — 1950s advertising plate.
+         Poster ground = the ad. Cream paper = the product.
+         ============================================================ */
+
+      :root {
+        --pine: #2c7a6b;
+        --pine-deep: #0e5d51;
+        --pine-dark: #0a3f37;
+        --cream: #f6e3be;
+        --cream-dim: #dcc79f;
+        --paper: #fbf6e9;
+        --paper-alt: #f0ead7;
+        --tomato: #cf4630;
+        --ink: #101a17;
+        --ink-soft: #4a5b55;
+        --ink-faint: #7f8d87;
+        --mint: #60cdb5;
+        --ochre: #b8801e;
+
+        --plate-radius: 14px;
+        --mono:
+          ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+
+      body {
+        margin: 0;
+        background: var(--pine);
+        color: var(--cream);
+        font-family: Inter, system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* Halftone dot field — the banner's texture, fading from the left. */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: radial-gradient(
+          circle at center,
+          rgba(10, 63, 55, 0.55) 1.4px,
+          transparent 1.5px
+        );
+        background-size: 9px 9px;
+        -webkit-mask-image: radial-gradient(
+          ellipse 90% 60% at 8% 12%,
+          #000 0%,
+          transparent 70%
+        );
+        mask-image: radial-gradient(
+          ellipse 90% 60% at 8% 12%,
+          #000 0%,
+          transparent 70%
+        );
+      }
+
+      /* Paper grain over the whole ad. */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.16;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 2;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--mint);
+        outline-offset: 3px;
+        border-radius: 3px;
+      }
+
+      /* ---------- Poster primitives ---------- */
+
+      /* Double-rule frame, exactly like the banner's border. */
+      .plate {
+        position: relative;
+        border: 2.5px solid var(--ink);
+        border-radius: var(--plate-radius);
+        box-shadow:
+          0 0 0 3px var(--cream),
+          0 0 0 5.5px var(--ink);
+        margin: 0 5px 78px;
+        padding: 44px 38px;
+      }
+
+      .plate--paper {
+        background: var(--paper);
+        color: var(--ink);
+      }
+
+      .plate--deep {
+        background: var(--pine-deep);
+      }
+
+      .eyebrow {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        line-height: 1;
+        margin: 0 0 14px;
+        color: var(--mint);
+      }
+
+      .plate--paper .eyebrow {
+        color: var(--tomato);
+      }
+
+      h2 {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 600;
+        font-size: clamp(28px, 4.4vw, 42px);
+        letter-spacing: 0.005em;
+        line-height: 1.06;
+        text-transform: uppercase;
+        margin: 0 0 16px;
+      }
+
+      h3 {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 19px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0 0 16px;
+        max-width: 62ch;
+      }
+
+      .lede {
+        font-size: 18px;
+        line-height: 1.55;
+      }
+
+      .plate--paper .muted {
+        color: var(--ink-soft);
+      }
+
+      .muted {
+        color: var(--cream-dim);
+      }
+
+      /* Four-point sparkle, scattered like the banner's stars. */
+      .spark {
+        position: absolute;
+        pointer-events: none;
+        color: var(--cream);
+        opacity: 0.85;
+      }
+
+      /* ---------- Hero ---------- */
+
+      .hero {
+        background: transparent;
+        padding: 40px 38px 46px;
+        margin-top: 26px;
+        overflow: hidden;
+      }
+
+      .hero > * {
+        position: relative;
+      }
+
+      .wordmark {
+        font-family: "Lobster Two", cursive;
+        font-style: italic;
+        font-weight: 700;
+        font-size: clamp(62px, 12.5vw, 132px);
+        line-height: 0.92;
+        color: var(--paper);
+        margin: 0 0 6px;
+        letter-spacing: 0.005em;
+        text-shadow:
+          3px 3px 0 var(--ink),
+          4px 4px 0 var(--ink),
+          7px 7px 0 rgba(207, 70, 48, 0.5);
+      }
+
+      .tagchip {
+        display: inline-block;
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 600;
+        font-size: clamp(15px, 2.6vw, 24px);
+        letter-spacing: 0.13em;
+        color: var(--ink);
+        background: var(--cream);
+        border: 2.5px solid var(--ink);
+        border-radius: 9px;
+        padding: 7px 20px 6px;
+        box-shadow: 4px 4px 0 rgba(10, 26, 23, 0.45);
+        margin-bottom: 22px;
+      }
+
+      .hero-sub {
+        font-size: clamp(16px, 2vw, 19px);
+        max-width: 46ch;
+        margin-bottom: 30px;
+        color: var(--cream);
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        text-decoration: none;
+        padding: 12px 22px;
+        border: 2.5px solid var(--ink);
+        border-radius: 9px;
+        background: var(--cream);
+        color: var(--ink);
+        box-shadow: 4px 4px 0 var(--ink);
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease;
+      }
+
+      .btn:hover {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+
+      .btn--solid {
+        background: var(--tomato);
+        color: var(--paper);
+      }
+
+      .btn--soon {
+        background: rgba(246, 227, 190, 0.14);
+        color: var(--cream-dim);
+        border-color: rgba(16, 26, 23, 0.55);
+        box-shadow: 4px 4px 0 rgba(10, 26, 23, 0.35);
+        cursor: not-allowed;
+      }
+
+      .btn--soon:hover {
+        transform: none;
+        box-shadow: 4px 4px 0 rgba(10, 26, 23, 0.35);
+      }
+
+      .btn--soon .soon {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(246, 227, 190, 0.2);
+        color: var(--cream);
+      }
+
+      .btn svg {
+        width: 18px;
+        height: 18px;
+        flex: none;
+      }
+
+      .alpha-note {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        font-size: 13.5px;
+        color: var(--cream-dim);
+        max-width: 56ch;
+      }
+
+      .alpha-note b {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--ink);
+        background: var(--ochre);
+        padding: 3px 7px;
+        border-radius: 4px;
+        flex: none;
+      }
+
+      /* ---------- The popup replica (signature) ---------- */
+
+      .device {
+        margin-top: 44px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow:
+          10px 10px 0 rgba(10, 26, 23, 0.4),
+          0 0 0 3px var(--cream);
+        overflow: hidden;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .device-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--ink);
+      }
+
+      .device-head .name {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 21px;
+        line-height: 1;
+        letter-spacing: 0.01em;
+      }
+
+      .label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .tools {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--ink-soft);
+      }
+
+      .tool {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 5px;
+      }
+
+      .tool svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .searchbox {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border: 1.5px solid var(--paper-alt);
+        border-radius: 6px;
+        padding: 4px 9px;
+        color: var(--ink-faint);
+        font-size: 12.5px;
+        background: #fff;
+      }
+
+      .searchbox svg {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
+
+      .device-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+      }
+
+      .col-sessions {
+        border-right: 1.5px solid var(--paper-alt);
+        min-width: 0;
+      }
+
+      .col-windows {
+        background: var(--paper-alt);
+        min-width: 0;
+        padding: 12px 14px 16px;
+      }
+
+      .session {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+        padding-right: 12px;
+        border-top: 1px solid var(--paper-alt);
+      }
+
+      .col-sessions .session:first-child {
+        border-top: 0;
+      }
+
+      /* The tag band — same 5px rail as Session.svelte. */
+      .band {
+        width: 5px;
+        border-radius: 0 3px 3px 0;
+        background: var(--paper-alt);
+        flex: none;
+      }
+
+      .session-main {
+        min-width: 0;
+        flex: 1;
+        padding: 10px 0;
+        text-align: left;
+      }
+
+      .session-title {
+        font-size: 15px;
+        line-height: 1.25;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 68px;
+        font-weight: 500;
+      }
+
+      /* .facts — the mono micro-row from popup.css. */
+      .facts {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1;
+        color: var(--ink-faint);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .facts .sep {
+        opacity: 0.5;
+      }
+
+      .facts .tag {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .session-actions {
+        position: absolute;
+        right: 12px;
+        top: 9px;
+        display: flex;
+        gap: 9px;
+        color: var(--ink-soft);
+        opacity: 0;
+        transition: opacity 140ms ease;
+      }
+
+      .session-actions svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .session:hover .session-actions,
+      .session:focus-within .session-actions {
+        opacity: 1;
+      }
+
+      .session:hover {
+        background: var(--paper-alt);
+      }
+
+      .session.is-selected {
+        background: #dfeae4;
+      }
+
+      .session.is-selected:hover {
+        background: #dfeae4;
+      }
+
+      .session mark {
+        background: var(--pine-deep);
+        color: var(--paper);
+        border-radius: 2px;
+        padding: 0 2px;
+      }
+
+      /* Right column — the hydrated window/tab list. */
+      .runhead {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .runhead .h {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        letter-spacing: 0.02em;
+      }
+
+      .winblock + .winblock {
+        margin-top: 14px;
+      }
+
+      .winbar {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 6px;
+      }
+
+      .winbar .rule {
+        height: 1px;
+        flex: 1;
+        background: #d6cdb4;
+      }
+
+      .tabrow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 4px 6px;
+        border-radius: 5px;
+        min-width: 0;
+      }
+
+      .tabrow:hover {
+        background: #e6dfca;
+      }
+
+      .fav {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        flex: none;
+      }
+
+      .tabrow .t {
+        font-size: 12.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+
+      .tabrow .d {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--ink-faint);
+        flex: none;
+      }
+
+      .device-foot {
+        border-top: 1.5px solid var(--paper-alt);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .kbd {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        line-height: 1;
+        padding: 4px 6px;
+        border: 1px solid #cfc5aa;
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: #fff;
+        color: var(--ink-soft);
+      }
+
+      .device-note {
+        text-align: center;
+        font-size: 12.5px;
+        color: var(--cream-dim);
+        margin: 14px 0 0;
+        max-width: none;
+      }
+
+      /* ---------- Badge row (the banner's four circles) ---------- */
+
+      .badges {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 28px;
+      }
+
+      .badge {
+        text-align: center;
+      }
+
+      .badge .disc {
+        width: 92px;
+        height: 92px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        border: 3px solid var(--cream);
+        background: var(--pine-deep);
+        display: grid;
+        place-items: center;
+        color: var(--cream);
+      }
+
+      .badge .disc svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .badge h3 {
+        color: var(--cream);
+        margin-bottom: 6px;
+      }
+
+      .badge p {
+        font-size: 13.5px;
+        line-height: 1.5;
+        color: var(--cream-dim);
+        margin: 0 auto;
+        max-width: 22ch;
+      }
+
+      /* ---------- Two-column plates ---------- */
+
+      .split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 44px;
+        align-items: start;
+      }
+
+      .split--wide {
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      }
+
+      /* Restore diagram: session -> windows -> unloaded tabs. */
+      .restore {
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        background: #fff;
+        padding: 16px;
+      }
+
+      .restore-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .winrow {
+        border: 1.5px solid var(--paper-alt);
+        border-radius: 7px;
+        overflow: hidden;
+      }
+
+      .winrow-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 9px;
+        background: var(--paper-alt);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 8px 9px;
+      }
+
+      .chip {
+        height: 15px;
+        border-radius: 3px;
+        background: #e4ddc7;
+      }
+
+      .chip.live {
+        background: var(--pine-deep);
+      }
+
+      .chip-key {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .chip-key span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .chip-key i {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+
+      /* ---------- Shortcuts ---------- */
+
+      .shortcuts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 34px;
+      }
+
+      .sc {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px dashed rgba(246, 227, 190, 0.28);
+      }
+
+      .sc .keys {
+        display: flex;
+        gap: 4px;
+        flex: none;
+        width: 96px;
+      }
+
+      .key {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        line-height: 1;
+        padding: 6px 7px;
+        border-radius: 5px;
+        background: var(--cream);
+        color: var(--ink);
+        border-bottom: 2px solid rgba(10, 26, 23, 0.5);
+      }
+
+      .sc .what {
+        font-size: 14px;
+        color: var(--cream);
+      }
+
+      /* ---------- Install ---------- */
+
+      .steps {
+        display: grid;
+        gap: 22px;
+        counter-reset: step;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .step-num {
+        counter-increment: step;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--tomato);
+        color: var(--paper);
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-size: 17px;
+        line-height: 1;
+      }
+
+      .step-num::before {
+        content: counter(step);
+      }
+
+      pre {
+        margin: 10px 0 0;
+        padding: 14px 16px;
+        background: var(--ink);
+        color: var(--cream);
+        border-radius: 8px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.7;
+        overflow-x: auto;
+      }
+
+      pre .c {
+        color: var(--mint);
+      }
+
+      .browsers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .pill {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1.5px solid var(--paper-alt);
+        color: var(--ink-soft);
+      }
+
+      /* ---------- Privacy ---------- */
+
+      .facts-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .facts-list li {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        font-size: 15px;
+      }
+
+      .facts-list svg {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        color: var(--mint);
+      }
+
+      code.inl {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        padding: 2px 5px;
+        border-radius: 4px;
+        background: rgba(10, 26, 23, 0.35);
+        color: var(--cream);
+      }
+
+      .plate--paper code.inl {
+        background: var(--paper-alt);
+        color: var(--ink);
+      }
+
+      /* ---------- Footer band ---------- */
+
+      footer {
+        background: var(--pine-dark);
+        border-top: 2.5px solid var(--ink);
+        padding: 30px 0 40px;
+        position: relative;
+        z-index: 2;
+      }
+
+      .foot-band {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px 26px;
+        justify-content: space-between;
+        border: 2px solid var(--cream);
+        border-radius: 999px;
+        padding: 13px 26px;
+      }
+
+      .foot-band .slogan {
+        font-family: Oswald, "Arial Narrow", sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .foot-band .slogan svg {
+        width: 17px;
+        height: 17px;
+        color: var(--tomato);
+      }
+
+      .foot-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .foot-links a {
+        color: var(--cream);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(246, 227, 190, 0.4);
+        padding-bottom: 2px;
+      }
+
+      .foot-links a:hover {
+        color: var(--mint);
+        border-color: var(--mint);
+      }
+
+      .colophon {
+        margin: 22px auto 0;
+        text-align: center;
+        font-size: 12.5px;
+        color: rgba(246, 227, 190, 0.55);
+        max-width: none;
+      }
+
+      /* ---------- Motion ---------- */
+
+      @media (prefers-reduced-motion: no-preference) {
+        .js .lift {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+
+        .js .lift.in {
+          opacity: 1;
+          transform: none;
+          transition:
+            opacity 620ms cubic-bezier(0.22, 0.7, 0.28, 1),
+            transform 620ms cubic-bezier(0.22, 0.7, 0.28, 1);
+        }
+
+        .js .deal .session {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+
+        .js .deal.in .session {
+          animation: deal 460ms cubic-bezier(0.22, 0.7, 0.28, 1) forwards;
+        }
+
+        .js .deal.in .session:nth-child(1) {
+          animation-delay: 340ms;
+        }
+        .js .deal.in .session:nth-child(2) {
+          animation-delay: 430ms;
+        }
+        .js .deal.in .session:nth-child(3) {
+          animation-delay: 520ms;
+        }
+        .js .deal.in .session:nth-child(4) {
+          animation-delay: 610ms;
+        }
+
+        .js .col-windows {
+          opacity: 0;
+        }
+
+        .js .device.in .col-windows {
+          animation: fade 520ms ease 760ms forwards;
+        }
+
+        .spark {
+          animation: twinkle 4.5s ease-in-out infinite;
+        }
+
+        .spark:nth-of-type(2) {
+          animation-delay: 1.4s;
+        }
+        .spark:nth-of-type(3) {
+          animation-delay: 2.6s;
+        }
+      }
+
+      @keyframes deal {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @keyframes fade {
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 0.95;
+          transform: scale(1.05);
+        }
+      }
+
+      /* ---------- Responsive ---------- */
+
+      @media (max-width: 900px) {
+        .plate {
+          padding: 34px 22px;
+          margin-bottom: 56px;
+        }
+
+        .hero {
+          padding: 28px 20px 34px;
+        }
+
+        .device-body {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .col-sessions {
+          border-right: 0;
+          border-bottom: 1.5px solid var(--paper-alt);
+        }
+
+        .badges {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 30px 20px;
+        }
+
+        .split,
+        .split--wide {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 28px;
+        }
+
+        .shortcuts {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .session-actions {
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .wrap {
+          padding: 0 12px;
+        }
+
+        .plate {
+          padding: 26px 16px;
+          border-radius: 10px;
+        }
+
+        .badges {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .foot-band {
+          border-radius: 16px;
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ============ HERO ============ -->
+    <div class="wrap">
+      <header class="plate hero">
+        <svg
+          class="spark"
+          style="top: 42px; right: 16%"
+          width="34"
+          height="34"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M12 0c.9 6.2 4.9 10.2 11.1 11.1C16.9 12 12.9 16 12 22.2 11.1 16 7.1 12 .9 11.1 7.1 10.2 11.1 6.2 12 0Z"
+          />
+        </svg>
+        <svg
+          class="spark"
+          style="top: 128px; right: 6%"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M12 0c.9 6.2 4.9 10.2 11.1 11.1C16.9 12 12.9 16 12 22.2 11.1 16 7.1 12 .9 11.1 7.1 10.2 11.1 6.2 12 0Z"
+          />
+        </svg>
+        <svg
+          class="spark"
+          style="bottom: 22%; left: 3%"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M12 0c.9 6.2 4.9 10.2 11.1 11.1C16.9 12 12.9 16 12 22.2 11.1 16 7.1 12 .9 11.1 7.1 10.2 11.1 6.2 12 0Z"
+          />
+        </svg>
+
+        <h1 class="wordmark">Tabitha</h1>
+        <p class="tagchip">Save. Manage. Restore.</p>
+
+        <p class="hero-sub">
+          Save your open tabs with one click. Get them back whenever you want —
+          everything at once, one window, or just one tab.
+        </p>
+
+        <div class="cta-row">
+          <span class="btn btn--soon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 3v9m0 0 7.8 4.5M12 12 4.2 16.5" />
+            </svg>
+            Chrome Web Store
+            <span class="soon">Soon</span>
+          </span>
+
+          <span class="btn btn--soon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path
+                d="M4 9.5c2.6-1 5-.4 6.4 1.4M20 9.5c-3.5-3.6-8.6-2.6-10.6 1.1"
+              />
+            </svg>
+            Firefox Add-ons
+            <span class="soon">Soon</span>
+          </span>
+
+          <a class="btn btn--solid" href="#install">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3v11m0 0 4-4m-4 4-4-4" />
+              <path
+                d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"
+              />
+            </svg>
+            Build it now
+          </a>
+
+          <a
+            class="btn"
+            href="https://github.com/MithunWijayasiri/Tabitha"
+            rel="noopener"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.35-1.3-1.71-1.3-1.71-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"
+              />
+            </svg>
+            Source on GitHub
+          </a>
+        </div>
+
+        <p class="alpha-note">
+          <b>v0.1.0 · ALPHA</b>
+          <span
+            >The session database is still changing shape. Export your sessions
+            from <strong>Settings → Backup</strong> before you update.</span
+          >
+        </p>
+
+        <!-- Signature: the popup, drawn in CSS, not screenshotted. -->
+        <div class="device deal" id="device">
+          <div class="device-head">
+            <span class="name">Tabitha</span>
+            <span class="label">4 sessions · 187 tabs</span>
+
+            <div class="tools">
+              <span class="searchbox">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="m16 16 4 4" />
+                </svg>
+                figma
+              </span>
+              <span class="tool" title="Filter by tag">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 4.5h8.4L20 12l-7.6 7.5H4z" />
+                  <circle
+                    cx="8"
+                    cy="12"
+                    r="1.4"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                </svg>
+              </span>
+              <span class="tool" title="Sort">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3" />
+                </svg>
+              </span>
+              <span class="tool" title="Open full view">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M14 4h6v6M20 4l-8.5 8.5" />
+                  <path
+                    d="M18.5 14v4.5A1.5 1.5 0 0 1 17 20H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"
+                  />
+                </svg>
+              </span>
+              <span class="tool" title="Settings">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4"
+                  />
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="device-body">
+            <ul
+              class="col-sessions"
+              style="list-style: none; margin: 0; padding: 0"
+            >
+              <li class="session is-selected">
+                <span class="band" style="background: #b8801e"></span>
+                <div class="session-main">
+                  <p class="session-title">Design system audit</p>
+                  <span class="facts">
+                    <span>4 windows</span><span class="sep">·</span>
+                    <span>118 tabs</span><span class="sep">·</span>
+                    <span>2 hr</span><span class="sep">·</span>
+                    <span class="tag">work</span>
+                  </span>
+                </div>
+                <span class="session-actions" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14 4h6v6M20 4l-8.5 8.5" />
+                    <path
+                      d="M18.5 14v4.5A1.5 1.5 0 0 1 17 20H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 20h4l10-10-4-4L4 16z" />
+                    <path d="m14 6 4 4" />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 4.5h8.4L20 12l-7.6 7.5H4z" />
+                    <circle
+                      cx="8"
+                      cy="12"
+                      r="1.4"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M5 7h14M9 7V5h6v2m-8 0 .8 12.1a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"
+                    />
+                  </svg>
+                </span>
+              </li>
+
+              <li class="session">
+                <span class="band" style="background: #0e5d51"></span>
+                <div class="session-main">
+                  <p class="session-title">
+                    <mark>Figma</mark> plugin research
+                  </p>
+                  <span class="facts">
+                    <span>2 windows</span><span class="sep">·</span>
+                    <span>41 tabs</span><span class="sep">·</span>
+                    <span>1 day</span><span class="sep">·</span>
+                    <span class="tag">work</span>
+                  </span>
+                </div>
+                <span class="session-actions" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14 4h6v6M20 4l-8.5 8.5" />
+                    <path
+                      d="M18.5 14v4.5A1.5 1.5 0 0 1 17 20H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 20h4l10-10-4-4L4 16z" />
+                    <path d="m14 6 4 4" />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 4.5h8.4L20 12l-7.6 7.5H4z" />
+                    <circle
+                      cx="8"
+                      cy="12"
+                      r="1.4"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M5 7h14M9 7V5h6v2m-8 0 .8 12.1a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"
+                    />
+                  </svg>
+                </span>
+              </li>
+
+              <li class="session">
+                <span class="band" style="background: #cf4630"></span>
+                <div class="session-main">
+                  <p class="session-title">Tax documents 2025</p>
+                  <span class="facts">
+                    <span>1 window</span><span class="sep">·</span>
+                    <span>22 tabs</span><span class="sep">·</span>
+                    <span>3 day</span><span class="sep">·</span>
+                    <span class="tag">personal</span>
+                  </span>
+                </div>
+                <span class="session-actions" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14 4h6v6M20 4l-8.5 8.5" />
+                    <path
+                      d="M18.5 14v4.5A1.5 1.5 0 0 1 17 20H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 20h4l10-10-4-4L4 16z" />
+                    <path d="m14 6 4 4" />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 4.5h8.4L20 12l-7.6 7.5H4z" />
+                    <circle
+                      cx="8"
+                      cy="12"
+                      r="1.4"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M5 7h14M9 7V5h6v2m-8 0 .8 12.1a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"
+                    />
+                  </svg>
+                </span>
+              </li>
+
+              <li class="session">
+                <span class="band"></span>
+                <div class="session-main">
+                  <p class="session-title">Autosave</p>
+                  <span class="facts">
+                    <span>3 windows</span><span class="sep">·</span>
+                    <span>6 tabs</span><span class="sep">·</span>
+                    <span>5 min</span><span class="sep">·</span>
+                    <span class="tag">autosave</span>
+                  </span>
+                </div>
+                <span class="session-actions" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14 4h6v6M20 4l-8.5 8.5" />
+                    <path
+                      d="M18.5 14v4.5A1.5 1.5 0 0 1 17 20H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 20h4l10-10-4-4L4 16z" />
+                    <path d="m14 6 4 4" />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 4.5h8.4L20 12l-7.6 7.5H4z" />
+                    <circle
+                      cx="8"
+                      cy="12"
+                      r="1.4"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M5 7h14M9 7V5h6v2m-8 0 .8 12.1a1.5 1.5 0 0 0 1.5 1.4h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"
+                    />
+                  </svg>
+                </span>
+              </li>
+            </ul>
+
+            <div class="col-windows">
+              <div class="runhead">
+                <span class="h">Design system audit</span>
+                <span class="label">4 windows · 118 tabs</span>
+              </div>
+
+              <div class="winblock">
+                <div class="winbar">
+                  <span class="label">Window 1 · 34 tabs</span>
+                  <span class="rule"></span>
+                </div>
+                <div class="tabrow">
+                  <span class="fav" style="background: #cf4630"></span>
+                  <span class="t">Type scale — first principles</span>
+                  <span class="d">rsms.me</span>
+                </div>
+                <div class="tabrow">
+                  <span class="fav" style="background: #0e5d51"></span>
+                  <span class="t">Design Tokens Community Group</span>
+                  <span class="d">w3.org</span>
+                </div>
+                <div class="tabrow">
+                  <span class="fav" style="background: #b8801e"></span>
+                  <span class="t">Optical sizing in variable fonts</span>
+                  <span class="d">fonts.google.com</span>
+                </div>
+              </div>
+
+              <div class="winblock">
+                <div class="winbar">
+                  <span class="label">Window 2 · 29 tabs</span>
+                  <span class="rule"></span>
+                </div>
+                <div class="tabrow">
+                  <span class="fav" style="background: #60cdb5"></span>
+                  <span class="t">Contrast ratios that actually pass</span>
+                  <span class="d">webaim.org</span>
+                </div>
+                <div class="tabrow">
+                  <span class="fav" style="background: #4a5b55"></span>
+                  <span class="t">HSL custom properties, revisited</span>
+                  <span class="d">css-tricks.com</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="device-foot">
+            <span class="kbd">Ctrl</span><span class="kbd">K</span>
+            <span class="label">Command palette · 8 commands</span>
+          </div>
+        </div>
+
+        <p class="device-note">
+          Hover a session row — the restore, rename, tag and delete actions
+          appear exactly where the extension puts them.
+        </p>
+      </header>
+
+      <!-- ============ FOUR BADGES ============ -->
+      <section class="plate plate--deep lift" aria-labelledby="what">
+        <p class="eyebrow">What it does</p>
+        <h2 id="what" style="color: var(--cream)">
+          Save. Manage. Restore. Stay in flow.
+        </h2>
+
+        <div class="badges" style="margin-top: 34px">
+          <div class="badge">
+            <span class="disc">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 6.5A2.5 2.5 0 0 1 6.5 4H17l3 3v10.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z"
+                />
+                <path d="M7.5 4v4h7V4" />
+                <path d="M8.5 13.5h7v6h-7z" />
+              </svg>
+            </span>
+            <h3>Save</h3>
+            <p>
+              Every open window and tab, under a name you choose — or on a timer
+              you never touch.
+            </p>
+          </div>
+
+          <div class="badge">
+            <span class="disc">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 8.5V6a1.5 1.5 0 0 1 1.5-1.5h4L10 6.5h6A1.5 1.5 0 0 1 17.5 8v.5"
+                />
+                <path
+                  d="M3 8.5h16A1.5 1.5 0 0 1 20.5 10v8a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 18V8.5Z"
+                />
+                <path d="M6.5 12.5h6" />
+              </svg>
+            </span>
+            <h3>Manage</h3>
+            <p>
+              Colour-coded tags, sorting, and one search that reads session
+              names and tab titles together.
+            </p>
+          </div>
+
+          <div class="badge">
+            <span class="disc">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7v5.2l3.4 2" />
+              </svg>
+            </span>
+            <h3>Restore</h3>
+            <p>
+              The whole session, a single window, or one tab out of the middle
+              of it.
+            </p>
+          </div>
+
+          <div class="badge">
+            <span class="disc">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 7A2.5 2.5 0 0 1 6 4.5h12A2.5 2.5 0 0 1 20.5 7v10a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17V7Z"
+                />
+                <path d="M3.5 8.5h17" />
+                <path d="M7 12h4v4.5H7zM14 12h3M14 15h3" />
+              </svg>
+            </span>
+            <h3>Stay in flow</h3>
+            <p>
+              Pick up in the same windows, in the same order, where you left.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LAZY RESTORE ============ -->
+      <section class="plate plate--paper lift" aria-labelledby="restore-h">
+        <div class="split split--wide">
+          <div>
+            <p class="eyebrow">Restore tabs unloaded</p>
+            <h2 id="restore-h">118 tabs back<br />without 118 page loads</h2>
+            <p class="lede muted">
+              Restoring a big session normally means every tab fetching at once.
+              Tabitha puts each tab back as a stub that carries the real title,
+              URL and icon — the page itself loads the first time you click it.
+            </p>
+            <p class="muted">
+              Sessions are meant to hold hundreds of tabs, so the list view
+              never keeps window data in memory. It reads titles and counts; the
+              actual windows are only pulled out of IndexedDB for the one
+              session you open.
+            </p>
+          </div>
+
+          <div class="restore">
+            <div class="restore-head">
+              <span class="label">Design system audit</span>
+              <span class="label">Restoring…</span>
+            </div>
+
+            <div class="stack">
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 1 · 34 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip live" style="width: 54px"></span>
+                  <span class="chip" style="width: 38px"></span>
+                  <span class="chip" style="width: 62px"></span>
+                  <span class="chip" style="width: 30px"></span>
+                  <span class="chip" style="width: 46px"></span>
+                  <span class="chip" style="width: 56px"></span>
+                  <span class="chip" style="width: 34px"></span>
+                  <span class="chip" style="width: 50px"></span>
+                </div>
+              </div>
+
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 2 · 29 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip" style="width: 44px"></span>
+                  <span class="chip" style="width: 58px"></span>
+                  <span class="chip" style="width: 32px"></span>
+                  <span class="chip" style="width: 48px"></span>
+                  <span class="chip" style="width: 40px"></span>
+                  <span class="chip" style="width: 60px"></span>
+                </div>
+              </div>
+
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 3 · 31 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip" style="width: 52px"></span>
+                  <span class="chip" style="width: 36px"></span>
+                  <span class="chip" style="width: 60px"></span>
+                  <span class="chip" style="width: 28px"></span>
+                  <span class="chip" style="width: 44px"></span>
+                  <span class="chip" style="width: 58px"></span>
+                  <span class="chip" style="width: 32px"></span>
+                </div>
+              </div>
+
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 4 · 24 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip" style="width: 46px"></span>
+                  <span class="chip" style="width: 62px"></span>
+                  <span class="chip" style="width: 34px"></span>
+                  <span class="chip" style="width: 50px"></span>
+                  <span class="chip" style="width: 40px"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="chip-key">
+              <span><i class="chip live" style="width: 11px"></i> Loaded</span>
+              <span
+                ><i class="chip" style="width: 11px"></i> Waiting for a
+                click</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SHORTCUTS ============ -->
+      <section class="plate lift" aria-labelledby="keys-h">
+        <p class="eyebrow">Hands stay on the keyboard</p>
+        <h2 id="keys-h" style="color: var(--cream)">
+          Eight keys, no menu diving
+        </h2>
+        <p class="muted" style="margin-bottom: 26px">
+          <span
+            class="kbd"
+            style="
+              background: var(--cream);
+              border-color: rgba(10, 26, 23, 0.4);
+            "
+            >Ctrl</span
+          >
+          <span
+            class="kbd"
+            style="
+              background: var(--cream);
+              border-color: rgba(10, 26, 23, 0.4);
+            "
+            >K</span
+          >
+          opens a palette with save, duplicate, delete, delete all, export,
+          theme, full view and settings. The rest are single keys.
+        </p>
+
+        <div class="shortcuts">
+          <div class="sc">
+            <span class="keys"
+              ><span class="key">Ctrl</span><span class="key">K</span></span
+            >
+            <span class="what">Open the command palette</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">S</span></span>
+            <span class="what">Save the current session</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">R</span></span>
+            <span class="what">Rename the selected session</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">F</span></span>
+            <span class="what">Focus the search box</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">C</span></span>
+            <span class="what">Show the current session</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">E</span></span>
+            <span class="what">Select the next session</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">D</span></span>
+            <span class="what">Select the previous session</span>
+          </div>
+          <div class="sc">
+            <span class="keys"><span class="key">Del</span></span>
+            <span class="what">Delete the selected session</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PRIVACY ============ -->
+      <section class="plate plate--deep lift" aria-labelledby="priv-h">
+        <div class="split">
+          <div>
+            <p class="eyebrow">Where your tabs live</p>
+            <h2 id="priv-h" style="color: var(--cream)">
+              Nothing is sent<br />anywhere
+            </h2>
+            <p class="muted">
+              There is no account, no sync server, and no analytics. Sessions
+              sit in your browser's own IndexedDB; settings sit in
+              <code class="inl">storage.local</code>. The only way data leaves
+              is a file you export yourself.
+            </p>
+          </div>
+
+          <ul class="facts-list">
+            <li>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12.5 10 17.5 19 7" />
+              </svg>
+              <span
+                >Export as <code class="inl">.tab</code> (compressed) or
+                <code class="inl">.tab.json</code> (plain JSON you can
+                read).</span
+              >
+            </li>
+            <li>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12.5 10 17.5 19 7" />
+              </svg>
+              <span
+                >Keep pages out with
+                <a
+                  href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns"
+                  rel="noopener"
+                  >match patterns</a
+                >, and leave pinned tabs out of saves.</span
+              >
+            </li>
+            <li>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12.5 10 17.5 19 7" />
+              </svg>
+              <span
+                >Five shared permissions — <code class="inl">tabs</code>,
+                <code class="inl">storage</code>,
+                <code class="inl">unlimitedStorage</code>,
+                <code class="inl">alarms</code>,
+                <code class="inl">contextMenus</code> — plus
+                <code class="inl">cookies</code> on Firefox,
+                <code class="inl">system.display</code> and
+                <code class="inl">favicon</code> on Chromium.</span
+              >
+            </li>
+            <li>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12.5 10 17.5 19 7" />
+              </svg>
+              <span>MIT licensed. Read every line before you load it.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ INSTALL ============ -->
+      <section
+        class="plate plate--paper lift"
+        id="install"
+        aria-labelledby="inst-h"
+      >
+        <p class="eyebrow">Load it unpacked</p>
+        <h2 id="inst-h">Three steps, about a minute</h2>
+        <p class="muted" style="margin-bottom: 30px">
+          No store listing yet, so you build it yourself. Node 22 and npm are
+          the only requirements.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <span class="step-num" aria-hidden="true"></span>
+            <div>
+              <h3>Clone and install</h3>
+              <pre
+                aria-label="Clone and install commands"
+              ><code>git clone https://github.com/MithunWijayasiri/Tabitha.git
+cd Tabitha
+npm install</code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-num" aria-hidden="true"></span>
+            <div>
+              <h3>Build for your browser</h3>
+              <pre
+                aria-label="Build commands"
+              ><code>npm run build      <span class="c"># Chrome, Edge, Opera → dist/</span>
+npm run build:ff   <span class="c"># Firefox → dist/</span></code></pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <span class="step-num" aria-hidden="true"></span>
+            <div>
+              <h3>Point the browser at dist/</h3>
+              <p class="muted" style="margin: 6px 0 0">
+                <strong>Chrome, Edge, Opera</strong> — open
+                <code class="inl">chrome://extensions</code>, turn on Developer
+                mode, click <strong>Load unpacked</strong>, pick
+                <code class="inl">dist/</code>.
+              </p>
+              <p class="muted" style="margin: 8px 0 0">
+                <strong>Firefox</strong> — open
+                <code class="inl">about:debugging</code>, click
+                <strong>This Firefox</strong>, then
+                <strong>Load Temporary Add-on</strong>, pick any file in
+                <code class="inl">dist/</code>.
+              </p>
+              <p class="muted" style="margin: 8px 0 0">
+                Or let <code class="inl">web-ext</code> open a clean profile
+                with it already loaded: <code class="inl">npm run open</code> /
+                <code class="inl">npm run open:ff</code>.
+              </p>
+              <div class="browsers">
+                <span class="pill">Chrome</span>
+                <span class="pill">Firefox</span>
+                <span class="pill">Edge</span>
+                <span class="pill">Opera</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ FOOTER ============ -->
+    <footer>
+      <div class="wrap">
+        <div class="foot-band">
+          <span class="slogan">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 21s-8-4.9-8-10.4A4.6 4.6 0 0 1 12 7.4 4.6 4.6 0 0 1 20 10.6C20 16.1 12 21 12 21Z"
+              />
+            </svg>
+            Built for productivity. Designed for you.
+          </span>
+
+          <nav class="foot-links" aria-label="Project links">
+            <a href="https://github.com/MithunWijayasiri/Tabitha" rel="noopener"
+              >GitHub</a
+            >
+            <a
+              href="https://github.com/MithunWijayasiri/Tabitha/issues"
+              rel="noopener"
+              >Issues</a
+            >
+            <a
+              href="https://github.com/MithunWijayasiri/Tabitha/blob/main/LICENSE"
+              rel="noopener"
+              >MIT</a
+            >
+          </nav>
+        </div>
+
+        <p class="colophon">
+          Tabitha 0.1.0 · Svelte 5, TypeScript, Vite 8, UnoCSS, IndexedDB · body
+          text set in Inter, the face the extension ships.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // No-JS / no-IntersectionObserver fallback: everything is already visible
+      // because .in is applied immediately below.
+      (function () {
+        var targets = document.querySelectorAll(".lift, #device");
+
+        if (
+          !("IntersectionObserver" in window) ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          targets.forEach(function (el) {
+            el.classList.add("in");
+          });
+          return;
+        }
+
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add("in");
+              io.unobserve(entry.target);
+            });
+          },
+          { rootMargin: "0px 0px -12% 0px", threshold: 0.12 },
+        );
+
+        targets.forEach(function (el) {
+          io.observe(el);
+        });
+      })();
+    </script>
+  </body>
+</html>
