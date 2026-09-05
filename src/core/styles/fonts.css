@@ -1,0 +1,15 @@
+@font-face {
+  font-family: "Inter";
+  src: url("/font/Inter.woff2") format("woff2");
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Variable: optical size 9–144, weight 400–700. */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/font/Fraunces.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}

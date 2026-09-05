@@ -1,0 +1,30 @@
+/* Popup-specific UnoCSS utility classes. */
+
+.facts {
+  @apply flex items-center gap-2 whitespace-nowrap font-mono text-[10px] leading-none text-ink-faint;
+}
+
+.facts > .sep {
+  @apply text-ink-faint/50;
+}
+
+.rule {
+  @apply h-px flex-1 bg-line;
+}
+
+/* Header tool button. Icon only — the tooltip carries the name. */
+.tool {
+  @apply grid h-7 w-7 place-items-center rounded text-ink-muted;
+}
+
+.tool:hover {
+  @apply bg-panel-alt text-ink;
+}
+
+.tool[aria-expanded="true"] {
+  @apply bg-panel-alt text-accent;
+}
+
+mark {
+  @apply rounded-sm bg-accent px-0.5 text-accent-content;
+}
