@@ -34,6 +34,10 @@
       rel="stylesheet"
     />
 
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+
     <style>
       /* ============================================================
          Tabitha — 1950s advertising plate.
@@ -231,18 +235,6 @@
         padding: 40px 38px 46px;
         margin-top: 26px;
         overflow: hidden;
-      }
-
-      .hero::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 10px;
-        background: radial-gradient(
-          ellipse 70% 90% at 78% 20%,
-          rgba(96, 205, 181, 0.14),
-          transparent 65%
-        );
       }
 
       .hero > * {
@@ -828,7 +820,9 @@
 
       .key {
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 10px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
         line-height: 1;
         padding: 6px 7px;
         border-radius: 5px;
@@ -888,7 +882,7 @@
       }
 
       pre .c {
-        color: #86a89c;
+        color: var(--mint);
       }
 
       .browsers {
@@ -1018,12 +1012,12 @@
       /* ---------- Motion ---------- */
 
       @media (prefers-reduced-motion: no-preference) {
-        .lift {
+        .js .lift {
           opacity: 0;
           transform: translateY(16px);
         }
 
-        .lift.in {
+        .js .lift.in {
           opacity: 1;
           transform: none;
           transition:
@@ -1031,33 +1025,33 @@
             transform 620ms cubic-bezier(0.22, 0.7, 0.28, 1);
         }
 
-        .deal .session {
+        .js .deal .session {
           opacity: 0;
           transform: translateX(-10px);
         }
 
-        .deal.in .session {
+        .js .deal.in .session {
           animation: deal 460ms cubic-bezier(0.22, 0.7, 0.28, 1) forwards;
         }
 
-        .deal.in .session:nth-child(1) {
+        .js .deal.in .session:nth-child(1) {
           animation-delay: 340ms;
         }
-        .deal.in .session:nth-child(2) {
+        .js .deal.in .session:nth-child(2) {
           animation-delay: 430ms;
         }
-        .deal.in .session:nth-child(3) {
+        .js .deal.in .session:nth-child(3) {
           animation-delay: 520ms;
         }
-        .deal.in .session:nth-child(4) {
+        .js .deal.in .session:nth-child(4) {
           animation-delay: 610ms;
         }
 
-        .col-windows {
+        .js .col-windows {
           opacity: 0;
         }
 
-        .device.in .col-windows {
+        .js .device.in .col-windows {
           animation: fade 520ms ease 760ms forwards;
         }
 
@@ -1387,7 +1381,7 @@
                   <span class="facts">
                     <span>4 windows</span><span class="sep">·</span>
                     <span>118 tabs</span><span class="sep">·</span>
-                    <span>2 hours ago</span><span class="sep">·</span>
+                    <span>2 hr</span><span class="sep">·</span>
                     <span class="tag">work</span>
                   </span>
                 </div>
@@ -1457,7 +1451,7 @@
                   <span class="facts">
                     <span>2 windows</span><span class="sep">·</span>
                     <span>41 tabs</span><span class="sep">·</span>
-                    <span>yesterday</span><span class="sep">·</span>
+                    <span>1 day</span><span class="sep">·</span>
                     <span class="tag">work</span>
                   </span>
                 </div>
@@ -1525,7 +1519,7 @@
                   <span class="facts">
                     <span>1 window</span><span class="sep">·</span>
                     <span>22 tabs</span><span class="sep">·</span>
-                    <span>3 days ago</span><span class="sep">·</span>
+                    <span>3 day</span><span class="sep">·</span>
                     <span class="tag">personal</span>
                   </span>
                 </div>
@@ -1587,13 +1581,13 @@
               </li>
 
               <li class="session">
-                <span class="band" style="background: #7f8d87"></span>
+                <span class="band"></span>
                 <div class="session-main">
                   <p class="session-title">Autosave</p>
                   <span class="facts">
                     <span>3 windows</span><span class="sep">·</span>
                     <span>6 tabs</span><span class="sep">·</span>
-                    <span>5 minutes ago</span><span class="sep">·</span>
+                    <span>5 min</span><span class="sep">·</span>
                     <span class="tag">autosave</span>
                   </span>
                 </div>
@@ -1901,6 +1895,58 @@
                   <span class="chip" style="width: 60px"></span>
                 </div>
               </div>
+
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 3 · 31 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip" style="width: 52px"></span>
+                  <span class="chip" style="width: 36px"></span>
+                  <span class="chip" style="width: 60px"></span>
+                  <span class="chip" style="width: 28px"></span>
+                  <span class="chip" style="width: 44px"></span>
+                  <span class="chip" style="width: 58px"></span>
+                  <span class="chip" style="width: 32px"></span>
+                </div>
+              </div>
+
+              <div class="winrow">
+                <div class="winrow-head">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+                    <path d="M3.5 8.5h17" />
+                  </svg>
+                  Window 4 · 24 tabs
+                </div>
+                <div class="chips">
+                  <span class="chip" style="width: 46px"></span>
+                  <span class="chip" style="width: 62px"></span>
+                  <span class="chip" style="width: 34px"></span>
+                  <span class="chip" style="width: 50px"></span>
+                  <span class="chip" style="width: 40px"></span>
+                </div>
+              </div>
             </div>
 
             <div class="chip-key">
@@ -2048,11 +2094,14 @@
                 <path d="M5 12.5 10 17.5 19 7" />
               </svg>
               <span
-                >Five permissions, all of them structural:
-                <code class="inl">tabs</code>, <code class="inl">storage</code>,
+                >Five shared permissions — <code class="inl">tabs</code>,
+                <code class="inl">storage</code>,
                 <code class="inl">unlimitedStorage</code>,
                 <code class="inl">alarms</code>,
-                <code class="inl">contextMenus</code>.</span
+                <code class="inl">contextMenus</code> — plus
+                <code class="inl">cookies</code> on Firefox,
+                <code class="inl">system.display</code> and
+                <code class="inl">favicon</code> on Chromium.</span
               >
             </li>
             <li>
