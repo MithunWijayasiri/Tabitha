@@ -10,13 +10,6 @@ import { compressOptions, tabAttr } from "@/core/constants/shared";
 import { compress } from "@utils/compress";
 import { decodeDiscardedUrl, isDiscardedUrl } from "@/core/utils/discardedUrl";
 
-// Get all tabs of current window
-export async function getWindowTabs(
-  optionalQuery: QueryInfo = {},
-): Promise<BrowserTab[]> {
-  return getTabs({ ...optionalQuery, currentWindow: true });
-}
-
 export async function getTabs(
   queryInfo: QueryInfo = {},
   options?: CompressOptions,

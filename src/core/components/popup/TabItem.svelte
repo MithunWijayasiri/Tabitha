@@ -68,7 +68,7 @@
     <IconButton
       icon={current ? "close" : "delete"}
       title={current ? "Close tab" : "Remove from session"}
-      class="hidden text-base text-ink-muted hover:text-danger group-hover:block"
+      class="hidden text-base text-ink-muted hover:text-danger group-hover:block group-focus-within:block"
       on:click={() => {
         if (current && tab.id) browser.tabs.remove(tab.id);
         else dispatch("delete", tab);

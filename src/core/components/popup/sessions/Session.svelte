@@ -82,7 +82,7 @@
   </div>
 
   <div
-    class="absolute right-3 top-2 hidden items-center gap-2.5 group-hover:flex"
+    class="absolute right-3 top-2 hidden items-center gap-2.5 group-hover:flex group-focus-within:flex"
   >
     <IconButton
       icon="open"

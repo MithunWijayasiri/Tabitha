@@ -73,22 +73,36 @@ export async function openInNewWindow(
       window.left -= window.left + window.width - screenWidth;
   }
 
-  const windowId = (
-    await browser.windows.create({
-      incognito: window.incognito,
-      ...(window.state !== "normal"
-        ? { state: window.state }
-        : {
-            top: window.top,
-            left: window.left,
-            height: window.height,
-            width: window.width,
-          }),
-    })
-  ).id;
+  const created = await browser.windows.create({
+    incognito: window.incognito,
+    ...(window.state !== "normal"
+      ? { state: window.state }
+      : {
+          top: window.top,
+          left: window.left,
+          height: window.height,
+          width: window.width,
+        }),
+  });
 
+  const windowId = created.id;
+
+  // windows.create always opens a New Tab page when no url is given.
+  const placeholderId = created.tabs?.[0]?.id;
+
+  let restored = false;
+
+  // Awaited in sequence so the restored tabs keep their saved order.
   for (const tab of window.tabs) {
-    createTab(tab, windowId, discarded);
+    if (await createTab(tab, windowId, discarded)) restored = true;
+  }
+
+  if (placeholderId === undefined || !restored) return;
+
+  try {
+    await browser.tabs.remove(placeholderId);
+  } catch (error) {
+    log.error("failed to remove the placeholder tab:", error);
   }
 }
 

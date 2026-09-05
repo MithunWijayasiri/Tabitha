@@ -12,7 +12,17 @@ if (params) {
     link!.href = params.icon;
   }
 
-  document.onvisibilitychange = () => {
-    if (document.visibilityState === "visible") location.href = params.url;
+  const { url } = params;
+
+  const restore = () => {
+    if (document.visibilityState !== "visible") return;
+
+    // replace, not assign: the stub must not become a back-button destination.
+    location.replace(url);
   };
+
+  document.onvisibilitychange = restore;
+
+  // The stub can load already-visible - a browser-discarded tab reloads on activation.
+  restore();
 }

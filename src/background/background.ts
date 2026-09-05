@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import { createTab, openInNewWindow, openSession } from "./utils/browser";
-import { getSession, getWindowTabs } from "@/core/utils/getSession";
+import { getSession, getTabs } from "@/core/utils/getSession";
 import { sessionStore } from "@/core/utils/database";
 import { generateSession } from "@/core/utils/generateSession";
 import { getStorage, setStorage } from "@/core/utils/storage";
@@ -73,7 +73,7 @@ browser.runtime.onInstalled.addListener((details) => {
   });
 });
 
-browser.contextMenus.onClicked.addListener(async ({ menuItemId }) => {
+browser.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
   const { excludePinned, urlFilterList: url } = await getStorage({
     excludePinned: true,
     urlFilterList: undefined,
@@ -103,8 +103,16 @@ browser.contextMenus.onClicked.addListener(async ({ menuItemId }) => {
       break;
     case "tabitha-save-window":
       {
-        const window = await browser.windows.getCurrent({ populate: false });
-        window.tabs = await getWindowTabs({ pinned, url });
+        /*
+         * Taken from the clicked tab where possible: window focus can move while the
+         * storage read settles, and getCurrent() would then resolve the wrong window.
+         */
+        const window =
+          tab?.windowId === undefined
+            ? await browser.windows.getCurrent({ populate: false })
+            : await browser.windows.get(tab.windowId);
+
+        window.tabs = await getTabs({ pinned, url, windowId: window.id });
 
         if (!window.tabs?.length) return;
 

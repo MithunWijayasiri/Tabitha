@@ -60,7 +60,7 @@
       <IconButton
         icon={current ? "close" : "delete"}
         title={current ? "Close this window" : "Remove from session"}
-        class="hidden text-base text-ink-muted hover:text-danger group-hover:block"
+        class="hidden text-base text-ink-muted hover:text-danger group-hover:block group-focus-within:block"
         on:click={() => {
           if (current && window.id) browser.windows.remove(window.id);
           else dispatch("delete");

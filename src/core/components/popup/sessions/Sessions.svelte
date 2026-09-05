@@ -72,6 +72,8 @@
       case "KeyE": {
         const sessions = await $filtered;
 
+        if (!sessions.length) break;
+
         let index =
           sessions.findIndex((session) => session.id === $selection.id) + 1;
 
@@ -84,6 +86,8 @@
 
       case "KeyD": {
         const sessions = await $filtered;
+
+        if (!sessions.length) break;
 
         let index =
           sessions.findIndex((session) => session.id === $selection.id) - 1;
