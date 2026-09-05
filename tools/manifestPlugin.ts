@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { AddressInfo } from "node:net";
 import type { Plugin } from "vite";
-import { buildManifest } from "./buildManifest";
-import { dir, isDEV, isFirefox } from "./constants";
+import { buildManifest } from "./buildManifest.ts";
+import { dir, isDEV, isFirefox } from "./constants.ts";
 
 export function extensionManifestPlugin(): Plugin {
   let views: string[] = [];
