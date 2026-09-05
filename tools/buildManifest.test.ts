@@ -19,7 +19,7 @@ describe("buildManifest", () => {
     expect(manifest.background).toHaveProperty("scripts");
     expect(manifest.browser_specific_settings).toEqual({
       gecko: {
-        id: "tabitha@tabitha",
+        id: "tabitha@mithunwijayasiri.dev",
         data_collection_permissions: { required: ["none"] },
       },
     });
