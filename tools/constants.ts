@@ -13,7 +13,7 @@ export const extension = {
     "contextMenus",
     ...(firefox ? ["cookies"] : ["system.display", "favicon"]),
   ],
-  firefoxId: "tabitha@tabitha",
+  firefoxId: "tabitha@mithunwijayasiri.dev",
 };
 
 export const isDEV = process.env.NODE_ENV !== "production";
