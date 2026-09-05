@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "checkJs": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
@@ -12,9 +11,9 @@
     "noUnusedLocals": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@constants/*": ["src/core/constants/*"],
-      "@styles/*": ["src/core/styles/*"],
-      "@utils/*": ["src/core/utils/*"]
+      "@constants/*": ["./src/core/constants/*"],
+      "@styles/*": ["./src/core/styles/*"],
+      "@utils/*": ["./src/core/utils/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,
