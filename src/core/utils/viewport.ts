@@ -1,5 +1,5 @@
 export function createViewportCalculator() {
-  let elementHeight: number, clientHeight: number;
+  let elementHeight: number;
 
   return function getAvailableViewport(
     parent: HTMLElement,
@@ -13,9 +13,7 @@ export function createViewportCalculator() {
 
     if (length) {
       if (parent) {
-        const { scrollTop, scrollHeight } = parent;
-
-        if (!clientHeight) clientHeight = parent.clientHeight;
+        const { scrollTop, scrollHeight, clientHeight } = parent;
 
         if (scrollHeight > clientHeight) {
           if (!elementHeight) elementHeight = scrollHeight / length;

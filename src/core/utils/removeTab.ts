@@ -15,7 +15,10 @@ export function removeTab(
     session.tabsNumber--;
   } else session.tabsNumber -= window.tabs.length;
 
-  if (!tab || !window.tabs.length) session.windows.splice(windowIndex, 1);
+  if (!tab || !window.tabs.length) {
+    session.windows.splice(windowIndex, 1);
+    session.windowsNumber--;
+  }
 
   return session;
 }

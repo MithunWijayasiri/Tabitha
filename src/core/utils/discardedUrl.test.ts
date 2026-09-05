@@ -16,14 +16,12 @@ describe("discardedUrl", () => {
       title: "A & B",
       icon: "data:,",
     };
-    expect(
-      decodeDiscardedUrl(`https://ext/${encodeDiscardedUrl(params)}`),
-    ).toEqual(params);
+    expect(decodeDiscardedUrl(encodeDiscardedUrl(params))).toEqual(params);
   });
 
   it("returns undefined without url", () => {
     expect(
-      decodeDiscardedUrl("https://ext/src/discarded/index.html"),
+      decodeDiscardedUrl("chrome-extension://test/src/discarded/index.html"),
     ).toBeUndefined();
   });
 });

@@ -33,15 +33,20 @@ describe("removeTab", () => {
 
     expect(session.windows).toEqual([]);
     expect(session.tabsNumber).toBe(0);
+    expect(session.windowsNumber).toBe(0);
   });
 
   it("removes a whole window and decrements by its tab count", () => {
-    const session = makeSession([{ tabs: [tabs[0]!] }, { tabs: [tabs[1]!, tabs[2]!] }]);
+    const session = makeSession([
+      { tabs: [tabs[0]!] },
+      { tabs: [tabs[1]!, tabs[2]!] },
+    ]);
 
     removeTab(session, 1);
 
     expect(session.windows).toHaveLength(1);
     expect(session.tabsNumber).toBe(1);
+    expect(session.windowsNumber).toBe(1);
   });
 
   it("keeps the window when other tabs remain", () => {
@@ -52,6 +57,7 @@ describe("removeTab", () => {
     expect(session.windows[0]!.tabs).toEqual([tabs[1]]);
     expect(session.windows).toHaveLength(1);
     expect(session.tabsNumber).toBe(1);
+    expect(session.windowsNumber).toBe(1);
   });
 
   it("is a no-op for an unknown tab", () => {

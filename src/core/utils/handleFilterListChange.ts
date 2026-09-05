@@ -10,8 +10,14 @@ export function handleFilterListChange(
     /(\b(https?|ftp|file)|\B\*):\/{2}(\*|(\*\.)?[^*/\s:]*)\/[^\s]*/g,
   );
 
-  settings.changeSetting("urlFilterList", urls ?? undefined);
+  // revert invalid input rather than clearing the stored list
+  if (!urls) {
+    ev.currentTarget.value = previousValue;
+    return;
+  }
 
-  // revert invalid input back to the last stored value
-  if (!urls) ev.currentTarget.value = previousValue;
+  settings.changeSetting("urlFilterList", urls);
+
+  // drop any unmatched text so the textarea shows exactly what was stored
+  ev.currentTarget.value = urls.join("\n");
 }

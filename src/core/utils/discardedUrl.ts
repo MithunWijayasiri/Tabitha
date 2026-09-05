@@ -10,7 +10,7 @@ export function encodeDiscardedUrl({ url, title, icon }: DiscardedParams) {
   const params = new URLSearchParams({ url });
   if (title) params.set("title", title);
   if (icon) params.set("icon", icon);
-  return `src/discarded/index.html?${params}`;
+  return pageUrl("discarded", `?${params}`);
 }
 
 export function decodeDiscardedUrl(href: string): DiscardedParams | undefined {

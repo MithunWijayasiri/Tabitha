@@ -1,7 +1,11 @@
 let timeout: NodeJS.Timeout;
 
 export async function applyTheme(darkMode: boolean, fade?: boolean) {
-  if (timeout) clearTimeout(timeout);
+  // cancelling the pending removal would otherwise strand the class
+  if (timeout) {
+    clearTimeout(timeout);
+    document.body.classList.remove("fade");
+  }
 
   if (fade) document.body.classList.add("fade");
 

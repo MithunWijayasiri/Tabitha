@@ -19,6 +19,15 @@ describe("keymap", () => {
   });
 
   it("lists a binding for every code used", () => {
-    expect(keymap.map((binding) => binding.code)).toContain("Delete");
+    expect(keymap.map((binding) => binding.code)).toEqual([
+      "KeyK",
+      "KeyS",
+      "KeyR",
+      "KeyF",
+      "KeyC",
+      "KeyE",
+      "KeyD",
+      "Delete",
+    ]);
   });
 });

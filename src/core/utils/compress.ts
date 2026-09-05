@@ -4,12 +4,16 @@ import type { CompressOptions } from "@/core/types";
 export const compress = (() => {
   if (!isFirefox) return undefined;
 
-  const img = document.createElement("img");
-  const ctx = document.createElement("canvas").getContext("2d");
-
   return {
     async icon(src: string, options?: CompressOptions) {
-      if (!ctx || !img || !src || !src.startsWith("data:")) return src;
+      if (!src || !src.startsWith("data:")) return src;
+
+      // per call: a shared img/canvas would have its handlers and src
+      // overwritten by a concurrent call, leaving the earlier promise pending
+      const img = document.createElement("img");
+      const ctx = document.createElement("canvas").getContext("2d");
+
+      if (!ctx) return src;
 
       return new Promise<string>((resolve) => {
         img.src = src;

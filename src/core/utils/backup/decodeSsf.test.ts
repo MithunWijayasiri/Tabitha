@@ -39,4 +39,27 @@ describe("decodeSsf", () => {
 
     expect(decodeSsf(data)).toBeNull();
   });
+
+  it("rejects a record without windows in the envelope", () => {
+    const data = new TextEncoder().encode(
+      JSON.stringify({
+        tabitha: 1,
+        sessions: [{ id: "x", title: "No windows" }],
+      }),
+    );
+
+    expect(decodeSsf(data)).toBeNull();
+  });
+
+  it("rejects a record without windows in compressed data", () => {
+    const compressed = compressToUint8Array(
+      JSON.stringify([{ id: "x", title: "No windows" }]),
+    ) as Uint8Array;
+    const data = new Uint8Array(BACKUP_MAGIC.length + compressed.length);
+
+    data.set(new TextEncoder().encode(BACKUP_MAGIC));
+    data.set(compressed, BACKUP_MAGIC.length);
+
+    expect(decodeSsf(data)).toBeNull();
+  });
 });

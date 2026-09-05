@@ -16,8 +16,11 @@ export function highlightMatch(
 
   if (!match) return escaped;
 
+  // match the escaped representation, so "&" hits "&amp;" whole
+  const escapedMatch = match.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
+
   const pattern = new RegExp(
-    match.replace(RE_SPECIAL, "\\$&"),
+    escapedMatch.replace(RE_SPECIAL, "\\$&"),
     `${options.all ? "g" : ""}${options.caseSensitive ? "" : "i"}`,
   );
 

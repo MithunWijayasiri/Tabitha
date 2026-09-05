@@ -38,6 +38,18 @@ describe("highlightMatch", () => {
   });
 
   it("HTML-escapes with an empty query", () => {
-    expect(highlightMatch("<b>a & b</b>", "")).toBe("&lt;b&gt;a &amp; b&lt;/b&gt;");
+    expect(highlightMatch("<b>a & b</b>", "")).toBe(
+      "&lt;b&gt;a &amp; b&lt;/b&gt;",
+    );
+  });
+
+  it("marks an escaped entity whole rather than splitting it", () => {
+    expect(highlightMatch("a & b", "&")).toBe("a <mark>&amp;</mark> b");
+  });
+
+  it("matches a query containing an escaped character", () => {
+    expect(highlightMatch("<b>x</b>", "<b>")).toBe(
+      "<mark>&lt;b&gt;</mark>x&lt;/b&gt;",
+    );
   });
 });

@@ -25,7 +25,7 @@ export async function getStorageItem<K extends keyof Settings>(
   return (items[STORAGE_PREFIX + key] as Settings[K]) ?? defaultVal;
 }
 
-export async function getStorage<T extends Settings>(
+export async function getStorage<T extends Partial<Settings>>(
   keys: T | null | undefined,
 ) {
   const items = await storage.local.get(

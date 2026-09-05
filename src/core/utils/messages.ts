@@ -9,7 +9,11 @@ import type {
 import { log } from "@/core/utils/log";
 
 export type Message =
-  | { message: "dbChanged"; sessions: SessionSummary[]; selectedId?: UUID | "current" }
+  | {
+      message: "dbChanged";
+      sessions: SessionSummary[];
+      selectedId?: UUID | "current";
+    }
   | { message: "openWindow"; window: BrowserWindow; discarded?: boolean }
   | { message: "openTab"; tab: BrowserTab; discarded?: boolean }
   | { message: "restoreSession"; session: Session; discarded?: boolean }

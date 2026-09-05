@@ -81,7 +81,7 @@ export const tooltip: Action<
 
     destroy() {
       element.removeEventListener("pointerover", enter);
-      element.removeEventListener("pointerleave", leave);
+      element.removeEventListener("pointerout", leave);
 
       leave();
     },

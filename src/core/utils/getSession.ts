@@ -60,9 +60,10 @@ export async function getSession(queryInfo?: QueryInfo) {
   session.windows = await browser?.windows?.getAll();
 
   for (const window of session.windows) {
-    queryInfo.windowId = window.id;
-
-    window.tabs = await getTabs(queryInfo, compressOptions);
+    window.tabs = await getTabs(
+      { ...queryInfo, windowId: window.id },
+      compressOptions,
+    );
 
     session.tabsNumber += window.tabs.length;
   }

@@ -101,6 +101,8 @@ class SessionStore {
   }
 
   async filterSessions(query: string) {
+    const needle = query.toLowerCase();
+
     const results: SessionSummary[] = [];
 
     await this.initDB();
@@ -111,9 +113,9 @@ class SessionStore {
       const session = cursor.value;
 
       const matches =
-        session?.title?.toLowerCase().includes(query) ||
+        session?.title?.toLowerCase().includes(needle) ||
         session.windows.some((window) =>
-          window.tabs?.some((tab) => tab.title?.toLowerCase().includes(query)),
+          window.tabs?.some((tab) => tab.title?.toLowerCase().includes(needle)),
         );
 
       if (matches) results.push(toSummary(session));

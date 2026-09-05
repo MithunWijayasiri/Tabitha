@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getRelativeTime } from "./getRelativeTime";
 
 const MINUTE = 60000;
@@ -30,5 +30,30 @@ describe("getRelativeTime", () => {
 
   it("returns years", () => {
     expect(getRelativeTime(Date.now() - 2 * YEAR)).toBe("2 yr");
+  });
+
+  describe("exact unit boundaries", () => {
+    const NOW = 1_700_000_000_000;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("returns 1 min at exactly one minute", () => {
+      expect(getRelativeTime(NOW - MINUTE)).toBe("1 min");
+    });
+
+    it("returns 1 hr at exactly one hour", () => {
+      expect(getRelativeTime(NOW - HOUR)).toBe("1 hr");
+    });
+
+    it("returns just now one ms short of a minute", () => {
+      expect(getRelativeTime(NOW - MINUTE + 1)).toBe("just now");
+    });
   });
 });

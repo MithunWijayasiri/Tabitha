@@ -18,7 +18,7 @@ export function getRelativeTime(date: number) {
   const elapsed = Date.now() - date;
 
   for (const unit in timeInMS) {
-    if (elapsed > timeInMS[unit as keyof typeof timeInMS]) {
+    if (elapsed >= timeInMS[unit as keyof typeof timeInMS]) {
       const val = Math.round(elapsed / timeInMS[unit as keyof typeof timeInMS]);
 
       return `${val} ${labels[unit as keyof typeof labels]}`;
