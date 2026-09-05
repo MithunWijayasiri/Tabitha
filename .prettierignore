@@ -1,0 +1,4 @@
+*.md
+
+# Ignored via .gitignore, listed here for explicitness
+dist
