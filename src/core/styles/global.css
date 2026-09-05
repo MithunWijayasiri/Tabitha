@@ -1,0 +1,115 @@
+@import "./fonts";
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    .fade {
+      transition: all 200ms ease-in-out;
+    }
+  }
+}
+
+:root {
+  --page: 96 10% 90%;
+  --panel: 60 20% 98%;
+  --panel-alt: 84 17% 94%;
+  --line: 90 11% 82%;
+
+  --ink: 150 12% 10%;
+  --ink-muted: 144 6% 31%;
+  --ink-faint: 138 4% 53%;
+
+  --accent: 171 73% 21%;
+  --accent-focus: 171 70% 27%;
+  --accent-soft: 155 21% 89%;
+  --accent-content: 60 20% 98%;
+
+  --ochre: 39 79% 34%;
+  --success: 160 70% 26%;
+  --danger: 353 57% 41%;
+  --danger-focus: 353 57% 33%;
+  --link: 196 64% 33%;
+  --link-focus: 196 64% 24%;
+
+  --tooltip: 150 12% 14%;
+  --tooltip-content: 60 20% 98%;
+}
+
+.dark {
+  --page: 150 10% 8%;
+  --panel: 150 10% 11%;
+  --panel-alt: 154 9% 15%;
+  --line: 153 9% 20%;
+
+  --ink: 108 12% 92%;
+  --ink-muted: 138 6% 67%;
+  --ink-faint: 142 5% 47%;
+
+  --accent: 167 52% 59%;
+  --accent-focus: 167 55% 68%;
+  --accent-soft: 161 21% 15%;
+  --accent-content: 150 10% 8%;
+
+  --ochre: 39 67% 55%;
+  --success: 160 55% 55%;
+  --danger: 351 68% 65%;
+  --danger-focus: 351 68% 74%;
+  --link: 193 63% 65%;
+  --link-focus: 193 63% 76%;
+
+  --tooltip: 108 12% 92%;
+  --tooltip-content: 150 10% 8%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply min-h-[520px] min-w-[800px] overflow-hidden bg-page font-sans text-sm text-ink;
+}
+
+#root {
+  @apply flex h-full flex-col;
+}
+
+h1,
+h2 {
+  @apply font-display font-semibold tracking-tight;
+  font-variation-settings: "opsz" 24;
+}
+
+/* Fraunces has an opsz axis; 20px and up needs the display cut. */
+.opsz-lg {
+  font-variation-settings: "opsz" 72;
+}
+
+/* Lives here, not in popup.css — the options page uses it too. */
+.label {
+  @apply select-none whitespace-nowrap font-mono text-[10px] font-normal uppercase leading-none tracking-[0.16em] text-ink-faint;
+}
+
+::selection {
+  @apply bg-accent text-accent-content;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-accent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--line)) transparent;
+}
+
+::-webkit-scrollbar {
+  @apply w-1.5 bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-line;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-ink-faint;
+}
