@@ -54,12 +54,16 @@
     {
       title: "Delete selected session",
       hint: "Delete",
-      run: () =>
+      run: () => {
+        // Snapshotted: a dbChanged broadcast can move the selection while the modal is open.
+        const target = $selected;
+
         ask(
           "Delete session",
-          `Delete “${$selected?.title ?? ""}”? This cannot be undone.`,
-          () => sessions.remove($selected),
-        ),
+          `Delete “${target?.title ?? ""}”? This cannot be undone.`,
+          () => sessions.remove(target),
+        );
+      },
     },
     {
       title: "Delete all sessions",

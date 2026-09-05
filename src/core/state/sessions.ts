@@ -1,5 +1,10 @@
 import type { UUID } from "crypto";
-import type { Session, SessionSummary, BrowserTab } from "@/core/types";
+import type {
+  Session,
+  SessionSummary,
+  BrowserTab,
+  FilterOptions,
+} from "@/core/types";
 import { derived, get, writable, type Writable } from "svelte/store";
 import { sessionStore, toSummary } from "@utils/database";
 import { removeTab } from "@utils/removeTab";
@@ -69,6 +74,8 @@ export const sessions = (() => {
   async function put(target: Session) {
     if (!target.windows.length || !target.tabsNumber) return remove(target);
 
+    target.dateModified = Date.now();
+
     try {
       await sessionStore.updateSession(target);
     } catch (error) {
@@ -78,8 +85,6 @@ export const sessions = (() => {
     }
 
     update((sessions) => {
-      target.dateModified = Date.now();
-
       const index = sessions.findIndex((session) => session.id === target.id);
 
       if (index === -1) {
@@ -142,12 +147,13 @@ export const sessions = (() => {
       return;
     }
 
+    // Re-resolved after the await: a dbChanged broadcast can replace the list mid-delete.
     update((sessions) => {
-      sessions.splice(index, 1);
+      const remaining = sessions.filter((session) => session.id !== target.id);
 
-      notify(sessions);
+      notify(remaining);
 
-      return sessions;
+      return remaining;
     });
 
     notification.success_warning("Session deleted");
@@ -262,27 +268,55 @@ export const sessions = (() => {
 
 export const filtered = (() => {
   let currentQuery = "";
+  let currentSort: FilterOptions["sortMethod"] | undefined;
+  let currentTagsFilter: FilterOptions["tagsFilter"] | undefined;
   let filteredList: SessionSummary[] = [];
+  let generation = 0;
 
   const { subscribe } = derived(
     [sessions, filterOptions],
     ([$sessions, $filterOptions], set: (val: SessionSummary[]) => void) => {
       const { query, tagsFilter, sortMethod } = $filterOptions;
 
+      /*
+       * The query result is cached because sessions.filter rescans every record in
+       * the database. It may only be reused when the query is unchanged and this run
+       * was triggered by a sort or tag change - an identical set of options means the
+       * run came from sessions instead, so the cache no longer reflects the store.
+       */
+      const reuseCache =
+        query === currentQuery &&
+        (sortMethod !== currentSort || tagsFilter !== currentTagsFilter);
+
+      currentQuery = query;
+      currentSort = sortMethod;
+      currentTagsFilter = tagsFilter;
+
       if (!query) {
+        generation++; // drops any query still in flight
+
         set(filterTagsAndSort($sessions, sortMethod, tagsFilter));
-      } else if (currentQuery !== query) {
-        currentQuery = query;
 
-        sessions.filter(query.trim().toLowerCase()).then(
-          (val) => {
-            filteredList = val;
+        return;
+      }
 
-            set(filterTagsAndSort(filteredList, sortMethod, tagsFilter));
-          },
-          () => set([]),
-        );
-      } else set(filterTagsAndSort(filteredList, sortMethod, tagsFilter));
+      if (reuseCache)
+        return set(filterTagsAndSort(filteredList, sortMethod, tagsFilter));
+
+      const request = ++generation;
+
+      sessions.filter(query.trim().toLowerCase()).then(
+        (val) => {
+          if (request !== generation) return;
+
+          filteredList = val;
+
+          set(filterTagsAndSort(filteredList, sortMethod, tagsFilter));
+        },
+        () => {
+          if (request === generation) set([]);
+        },
+      );
     },
   );
 

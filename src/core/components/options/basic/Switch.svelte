@@ -14,19 +14,18 @@
     {/if}
   </span>
 
+  <!-- Visually hidden rather than display:none so it keeps keyboard focus and toggling. -->
   <input
     type="checkbox"
-    aria-hidden="true"
+    role="switch"
+    aria-label={title}
     bind:checked
     on:change
-    class="hidden"
+    class="sr-only"
   />
 
   <span
-    tabindex="0"
-    role="switch"
-    aria-checked={checked}
-    aria-label={title}
+    aria-hidden="true"
     class="before:fade relative block h-5 w-9 flex-none rounded-full border-[1.5px] border-ink-faint before:absolute before:left-[2px] before:top-[2px] before:block before:h-[13px] before:w-[13px] before:rounded-full before:bg-ink-faint before:content-['']"
   ></span>
 </label>
@@ -39,5 +38,10 @@
   input:checked + span:before {
     translate: 16px 0;
     background-color: hsl(var(--accent));
+  }
+
+  input:focus-visible + span {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
   }
 </style>

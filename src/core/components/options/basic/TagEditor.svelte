@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settings } from "@/core/state";
+  import { notification, settings } from "@/core/state";
   import { ColorInput, IconButton, Tag } from "@/core/components";
   import { addTag } from "@/core/utils";
 
@@ -26,6 +26,16 @@
     tagName: string,
   ) {
     const value = ev.currentTarget.value;
+
+    if (value === tagName) return;
+
+    if (Object.hasOwn($settings.tags, value)) {
+      ev.currentTarget.value = tagName;
+
+      $settings.tags[tagName]!.name = tagName;
+
+      return notification.error("Tag not renamed", `“${value}” already exists`);
+    }
 
     $settings.tags[value] = $settings.tags[tagName]!;
 
@@ -101,6 +111,12 @@
       disabled={addedTag.name.trim().length < 1}
       on:click={() => {
         if (addedTag.name.length < 1 || addedTag.name.length > 15) return;
+
+        if (Object.hasOwn($settings.tags, addedTag.name))
+          return notification.error(
+            "Tag not added",
+            `“${addedTag.name}” already exists`,
+          );
 
         addTag(addedTag.name, {
           bgColor: addedTag.bgColor,

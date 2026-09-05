@@ -36,7 +36,18 @@
   const getViewport = createViewportCalculator();
 
   function computeViewport() {
-    viewport = getViewport(divEl, items?.length, 300);
+    const next = getViewport(divEl, items?.length, 300);
+
+    // A fresh object every call would dirty the component and force a second render pass.
+    if (
+      next.start === viewport.start &&
+      next.end === viewport.end &&
+      next.paddingTop === viewport.paddingTop &&
+      next.paddingBottom === viewport.paddingBottom
+    )
+      return;
+
+    viewport = next;
     start = viewport.start;
     end = viewport.end;
   }
