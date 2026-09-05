@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
-import { isDEV } from "./tools/constants";
-import { sharedConfig } from "./vite.config";
+import { isDEV } from "./tools/constants.ts";
+import { sharedConfig } from "./vite.config.ts";
 import { resolve } from "path";
 
 // https://vitejs.dev/config/

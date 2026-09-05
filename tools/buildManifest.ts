@@ -1,5 +1,5 @@
 import type { Manifest } from "webextension-polyfill";
-import { extension } from "./constants";
+import { extension } from "./constants.ts";
 
 export interface ManifestTarget {
   firefox: boolean;
@@ -57,6 +57,10 @@ export function buildManifest({
       browser_specific_settings: {
         gecko: {
           id: extension.firefoxId,
+          // data_collection_permissions below is the binding constraint: it
+          // landed in Firefox 140. Every other API and permission Tabitha uses
+          // predates it, MV3 itself needing only 109.
+          strict_min_version: "140.0",
           // Required for AMO submissions since 2025-11-03. Tabitha stores
           // everything locally, so nothing is collected.
           data_collection_permissions: { required: ["none"] },

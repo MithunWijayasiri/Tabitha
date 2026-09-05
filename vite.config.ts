@@ -1,9 +1,9 @@
-import { extension, isDEV } from "./tools/constants";
+import { extension, isDEV } from "./tools/constants.ts";
 import { defineConfig, type CorsOptions, type UserConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { resolve } from "path";
 import UnoCSS from "unocss/vite";
-import { extensionManifestPlugin } from "./tools/manifestPlugin";
+import { extensionManifestPlugin } from "./tools/manifestPlugin.ts";
 
 export const sharedConfig: UserConfig = {
   server: {
