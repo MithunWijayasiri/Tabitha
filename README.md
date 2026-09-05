@@ -71,7 +71,7 @@ npm run test     # vitest
 
 `check`, `lint`, and `test` all have to pass. The dev build of `dist/` needs the Vite server running, so build with `npm run build` before handing the folder to anyone.
 
-Svelte 5, TypeScript, Vite 8, UnoCSS, `idb`, `webextension-polyfill`. `CLAUDE.md` covers the build pipeline and architecture; planned features are in [`docs/ROADMAP.md`](./docs/ROADMAP.md).
+Svelte 5, TypeScript, Vite 8, UnoCSS, `idb`, `webextension-polyfill`. `CLAUDE.md` covers the build pipeline and architecture.
 
 ## License
 
