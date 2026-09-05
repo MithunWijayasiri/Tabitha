@@ -2,7 +2,7 @@
 <h1 align="center">Tabitha</h1>
 
 <p align="center">
-  Capture browser windows and tabs as sessions, then restore them whenever you need.
+  Save your open tabs. Get them back whenever you want.
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 
 ## What it does
 
-Tabitha saves your open windows and tabs as a named session and puts them back later. Sessions hold hundreds of tabs, and restoring one is cheap because each tab loads only when you first click it.
+Tabitha saves your open tabs so you can close them without losing them. Name the session, then bring it back whenever you want. One session can hold hundreds of tabs, and getting them back is fast because each tab only loads when you click it.
 
 - Save, rename, tag, and restore sessions
 - Save automatically on a timer

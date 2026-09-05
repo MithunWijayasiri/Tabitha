@@ -3,8 +3,7 @@ export const isFirefox = process.env.TARGET === "firefox";
 export const extension = {
   name: "Tabitha",
   version: process.env.npm_package_version!,
-  description:
-    "Capture browser windows and tabs as sessions, then restore them whenever you need.",
+  description: "Save your open tabs. Get them back whenever you want.",
   permissions: (firefox: boolean) => [
     "tabs",
     "storage",
