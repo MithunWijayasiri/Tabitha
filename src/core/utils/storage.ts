@@ -35,6 +35,6 @@ export async function getStorage<T extends Partial<Settings>>(
   return unprefix(items) as unknown as T;
 }
 
-export function setStorage<T>(items: Partial<T>) {
+export function setStorage(items: Partial<Settings>) {
   return storage.local.set(prefix(items as Record<string, unknown>));
 }
