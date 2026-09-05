@@ -1,0 +1,7 @@
+# core.autocrlf checks text out as CRLF, but prettier's endOfLine defaults to
+# "lf" - without this, `npm run lint` fails on every file locally while passing
+# in CI on Linux. Normalizes to LF in the repository and in the working tree.
+* text=auto eol=lf
+
+*.png binary
+*.woff2 binary

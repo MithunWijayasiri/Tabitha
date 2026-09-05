@@ -6,7 +6,12 @@ export interface Keybinding {
 }
 
 export const keymap: Keybinding[] = [
-  { code: "KeyK", keys: ["CTRL", "K"], action: "Open Command Palette", ctrl: true },
+  {
+    code: "KeyK",
+    keys: ["CTRL", "K"],
+    action: "Open Command Palette",
+    ctrl: true,
+  },
   { code: "KeyS", keys: ["S"], action: "Save current session" },
   { code: "KeyR", keys: ["R"], action: "Rename selected session" },
   { code: "KeyF", keys: ["F"], action: "Focus search box" },

@@ -29,8 +29,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-# Temporary working docs
-docs
-TEMP_PR_PLAN.md
-CLAUDE.md

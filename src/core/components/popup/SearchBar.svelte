@@ -69,7 +69,12 @@
       />
     </div>
   {:else}
-    <button type="button" class="tool" use:tooltip={{ title: "Search" }} on:click={show}>
+    <button
+      type="button"
+      class="tool"
+      use:tooltip={{ title: "Search" }}
+      on:click={show}
+    >
       <IconButton icon="search" role="img" class="text-lg" />
     </button>
   {/if}

@@ -59,7 +59,8 @@
         >
           <span class="flex-1 truncate">{item.label}</span>
           {#if item.hint}
-            <span class="font-mono text-[10px] text-ink-faint">{item.hint}</span>
+            <span class="font-mono text-[10px] text-ink-faint">{item.hint}</span
+            >
           {/if}
         </button>
       {/each}

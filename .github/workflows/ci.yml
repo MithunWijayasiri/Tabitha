@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A superseded run on the same branch has nothing left to prove.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # Both targets: the manifest, permissions and background entry all diverge
+      # between Chromium and Firefox, so a green Chromium build proves nothing
+      # about the Gecko path.
+      - name: Build (Chromium)
+        run: npm run build
+
+      - name: Build (Firefox)
+        run: npm run build:ff
