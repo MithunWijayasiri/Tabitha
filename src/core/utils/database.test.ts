@@ -25,17 +25,19 @@ const upgradeSessions = sessionStore.upgradeSessions as (
 ) => Promise<void>;
 
 function fakeCursor(records: Session[]) {
+  const update = vi.fn();
+
   function at(index: number): unknown {
     if (index >= records.length) return undefined;
 
     return {
       value: records[index],
-      update: vi.fn(),
+      update,
       continue: async () => at(index + 1),
     };
   }
 
-  return { openCursor: async () => at(0) };
+  return { openCursor: async () => at(0), update };
 }
 
 describe("upgradeSessions", () => {
@@ -50,5 +52,6 @@ describe("upgradeSessions", () => {
     await upgradeSessions({}, 2, 3, transaction);
 
     expect(session.sites).toEqual([{ domain: "a.test", count: 1 }]);
+    expect(store.update).toHaveBeenCalledWith(session);
   });
 });
