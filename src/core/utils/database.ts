@@ -24,9 +24,8 @@ interface DB extends DBSchema {
 
 class SessionStore {
   private static instance: SessionStore;
-  private db!: IDBPDatabase<DB>;
-  private open = false;
   private version = 3;
+  private dbPromise?: Promise<IDBPDatabase<DB>>;
 
   constructor() {
     if (!SessionStore.instance) SessionStore.instance = this;
@@ -34,30 +33,25 @@ class SessionStore {
     return SessionStore.instance;
   }
 
-  async initDB() {
-    if (this.open) return;
+  private get db() {
+    this.dbPromise ??= openDB<DB>("tabitha", this.version, {
+      upgrade: this.upgradeSessions,
+    })
+      .then((db) => {
+        db.onerror = (event) => log.error("db error:", event);
+        db.onabort = (event) => log.error("db transaction aborted:", event);
 
-    try {
-      this.db = await openDB<DB>("tabitha", this.version, {
-        upgrade: this.upgradeSessions,
+        return db;
+      })
+      .catch((error) => {
+        log.error("failed to open db:", error);
+
+        this.dbPromise = undefined;
+
+        throw error;
       });
 
-      this.open = true;
-
-      this.db.onerror = (event) => log.error("db error:", event);
-
-      this.db.onabort = (event) => log.error("db transaction aborted:", event);
-    } catch (error) {
-      log.error("failed to open db:", error);
-
-      throw error;
-    }
-  }
-
-  async loadSessions(query?: number | IDBKeyRange, count?: number) {
-    await this.initDB();
-
-    return this.db.getAllFromIndex("sessions", "dateSaved", query, count);
+    return this.dbPromise;
   }
 
   async iterateSessions(
@@ -68,9 +62,8 @@ class SessionStore {
   ) {
     const sessions: SessionSummary[] = [];
 
-    await this.initDB();
-
-    const tx = this.db.transaction("sessions").store.index(index);
+    const db = await this.db;
+    const tx = db.transaction("sessions").store.index(index);
 
     const totalCount = await tx.count();
     let currentCount = 0;
@@ -92,9 +85,8 @@ class SessionStore {
   }
 
   async hydrate(summary: SessionSummary) {
-    await this.initDB();
-
-    const session = await this.db.get("sessions", summary.id as UUID);
+    const db = await this.db;
+    const session = await db.get("sessions", summary.id as UUID);
 
     if (!session) throw new Error(`Session ${summary.id} not found`);
 
@@ -106,9 +98,8 @@ class SessionStore {
 
     const results: SessionSummary[] = [];
 
-    await this.initDB();
-
-    const tx = this.db.transaction("sessions").store.index("dateSaved");
+    const db = await this.db;
+    const tx = db.transaction("sessions").store.index("dateSaved");
 
     for await (const cursor of tx.iterate()) {
       const session = cursor.value;
@@ -126,15 +117,14 @@ class SessionStore {
   }
 
   async saveSession(session: Session) {
-    await this.initDB();
+    const db = await this.db;
 
-    return this.db.add("sessions", session);
+    return db.add("sessions", session);
   }
 
   async saveSessions(sessions: Session[]) {
-    await this.initDB();
-
-    const tx = this.db.transaction("sessions", "readwrite");
+    const db = await this.db;
+    const tx = db.transaction("sessions", "readwrite");
 
     return new Promise<void>((resolve, reject) => {
       for (const session of sessions) {
@@ -158,29 +148,26 @@ class SessionStore {
   }
 
   async updateSession(session: Session) {
-    await this.initDB();
+    const db = await this.db;
 
-    return this.db.put("sessions", session);
+    return db.put("sessions", session);
   }
 
   async deleteSession(session: SessionSummary) {
-    await this.initDB();
+    const db = await this.db;
 
-    return this.db.delete("sessions", session.id as UUID);
+    return db.delete("sessions", session.id as UUID);
   }
 
   async getAutosavedCount() {
-    await this.initDB();
+    const db = await this.db;
 
-    return this.db.countFromIndex("sessions", "tag", "Autosave");
+    return db.countFromIndex("sessions", "tag", "Autosave");
   }
 
   async deleteLastAutosavedSession(count: number = 1) {
-    await this.initDB();
-
-    const tx = this.db
-      .transaction("sessions", "readwrite")
-      .store.index("dateSaved");
+    const db = await this.db;
+    const tx = db.transaction("sessions", "readwrite").store.index("dateSaved");
 
     for await (const cursor of tx.iterate(null, "next")) {
       if (cursor.value.tag === "Autosave") {
@@ -193,9 +180,9 @@ class SessionStore {
   }
 
   async deleteSessions() {
-    await this.initDB();
+    const db = await this.db;
 
-    return this.db.clear("sessions");
+    return db.clear("sessions");
   }
   async upgradeSessions(
     db: IDBPDatabase<DB>,

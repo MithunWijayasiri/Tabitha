@@ -1,5 +1,4 @@
-import { notification } from "@/core/state";
-import { sessionStore } from "@/core/utils";
+import { notification, sessions } from "@/core/state";
 import { decodeSsf } from "@/core/utils/backup/decodeSsf";
 
 export async function importBackup(event: Event) {
@@ -16,15 +15,15 @@ export async function importBackup(event: Event) {
   try {
     const data = new Uint8Array(await file.arrayBuffer());
 
-    const sessions = decodeSsf(data);
+    const imported = decodeSsf(data);
 
-    if (!sessions?.length)
+    if (!imported?.length)
       return notification.error(
         "Choose a valid backup file",
         "This file is empty or corrupt",
       );
 
-    await sessionStore.saveSessions(sessions);
+    await sessions.addBackup(imported);
   } catch (error) {
     notification.error("Import failed", (error as Error).message);
   }

@@ -208,6 +208,26 @@ export const sessions = (() => {
     return generated.id;
   }
 
+  async function addBackup(imported: Session[]) {
+    if (!imported.length) return;
+
+    try {
+      await sessionStore.saveSessions(imported);
+    } catch (error) {
+      notification.error("Import failed", (error as Error).message);
+
+      return;
+    }
+
+    update((sessions) => {
+      const merged = [...sessions, ...imported.map(toSummary)];
+
+      notify(merged);
+
+      return merged;
+    });
+  }
+
   async function put(target: Session) {
     if (!target.windows.length || !target.tabsNumber) return remove(target);
 
@@ -395,8 +415,8 @@ export const sessions = (() => {
 
   return {
     subscribe,
-    load,
     add: (session: Session) => exclusive(() => add(session)),
+    addBackup: (sessions: Session[]) => exclusive(() => addBackup(sessions)),
     put,
     filter,
     remove: (target: SessionSummary) => exclusive(() => remove(target)),
