@@ -21,3 +21,4 @@ export * from "./scrollbar";
 export * from "./tag";
 export * from "./sessionSignature";
 export * from "./saveSession";
+export * from "./serialize";

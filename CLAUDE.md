@@ -1,13 +1,13 @@
 # Project
 
-Tabitha — browser extension for saving, managing, and restoring browser sessions, windows, and tabs.
+Tabitha — browser extension for saving, managing and restoring sessions, windows and tabs.
 
-Stack: Svelte 5 + TypeScript + Vite 8 + UnoCSS + `idb` (IndexedDB) + `webextension-polyfill`. Package manager: **npm**; `name: tabitha`, `version: 0.1.0` (build mode `ALPHA`). Firefox ID `tabitha@tabitha` is a placeholder — change before AMO submission. ESLint 9 flat config lives in `eslint.config.js` (all recommended rules on). Most components are legacy Svelte-4 style; `Notification.svelte` is the first runes-mode component. Legacy reactive rules are satisfied by mutating store state through the store API (`sessions.selection.update`).
+Stack: Svelte 5 + TypeScript + Vite 8 + UnoCSS + `idb` (IndexedDB) + `webextension-polyfill`. npm. Build mode is `ALPHA` while major version `< 1`. Firefox ID `tabitha@tabitha` is a placeholder — change before AMO submission. Most components are legacy Svelte-4 style; `Notification.svelte` is the only runes-mode one. Legacy reactive rules are satisfied by mutating store state through the store API (`sessions.selection.update`).
 
 ## Commands
 
 ```bash
-npm run dev          # Chromium dev + vite server (dist/ is NOT standalone - see Dev-mode HMR hack)
+npm run dev          # Chromium dev + vite server (dist/ is NOT standalone — see Dev-mode HMR)
 npm run build        # Chromium production -> dist/
 npm run build:ff     # Firefox production
 npm run check        # svelte-check
@@ -16,142 +16,112 @@ npm test             # vitest run
 npm run format       # prettier --write
 ```
 
-No browser test framework; `vitest` covers pure TS units (`*.test.ts` adjacent to modules). `check` + `lint` + `test` are the verification gates; `.github/workflows/ci.yml` runs all three plus both builds on every PR.
+`check` + `lint` + `test` are the gates; CI runs all three plus both builds per PR. No browser test framework — `vitest` covers pure TS units, `*.test.ts` adjacent to the module.
 
-Line endings: `.gitattributes` forces LF (`* text=auto eol=lf`). Prettier's `endOfLine` defaults to `"lf"`, so without it `core.autocrlf` checks files out as CRLF and `npm run lint` fails on every file locally while passing in CI.
+`.gitattributes` forces LF. Prettier's `endOfLine` defaults to `"lf"`, so without it `core.autocrlf` checks files out CRLF and `npm run lint` fails on every file locally while passing in CI.
 
-Load unpacked: `dist/` (Chromium `chrome://extensions`, Firefox `about:debugging`).
+Load unpacked from `dist/`.
 
-## Build pipeline
+## Build
 
-Two parallel outputs into one `dist/`, orchestrated by `npm-run-all2` (`run-p`):
+`docs/BUILD.md` — **read it before touching `tools/`, either vite config, or the manifest.** It carries the two-output pipeline, the `TARGET=firefox` divergences, the build-time `define` globals, the dev HMR rewrite, and four gotchas that cost real time: `emptyOutDir: false`, the `flag: 'wx'` manifest write, background-must-stay-IIFE, and the terser-vs-oxc black popup.
 
-| Step               | Config                      | Produces                                                      |
-| ------------------ | --------------------------- | ------------------------------------------------------------- |
-| `build-web`        | `vite.config.ts`            | `popup`, `options`, `discarded` HTML entries + Svelte bundles + `dist/manifest.json` (via `extensionManifestPlugin`) |
-| `build-background` | `vite.config.background.ts` | `src/background/background.js`, **IIFE** format, single entry |
-
-`tools/manifestPlugin.ts` (attached only to `build-web`) writes `dist/manifest.json` from `tools/buildManifest.ts` at `buildStart`, and in dev also injects the HMR script URLs into the view HTMLs. Only build-web carries the plugin, so there is exactly one manifest writer.
-
-Gotchas:
-
-- Both vite configs set `emptyOutDir: false` — they write into the same `dist/` concurrently. Never enable it.
-- Prod manifest write uses `flag: 'wx'` — **fails if `dist/manifest.json` already exists**. Every script prefixes `npm run clean` for this reason. Dev writes overwrite (idempotent, port may change).
-- Background must stay IIFE — MV3 service worker output is bundled flat, not ESM-chunked.
-- Both vite configs set `minify: 'terser'`. The vite 8 default oxc minifier DCEs svelte's lazy runtime init (`init_operations`), yielding a black popup with `TypeError: Cannot read properties of undefined (reading 'call')` in the state chunk. Reproduces in a minimal hello-world svelte + vite 8 build; upstream unfixed. Do not revert to `'oxc'`.
-
-## Build-time constants
-
-`__EXT_NAME__`, `__EXT_VER__`, `__EXT_MODE__` are Vite `define` globals (`vite.config.ts`), sourced from `tools/constants.ts` + `process.env.npm_package_version`. Re-exported as `EXT_NAME`/`EXT_VER`/`EXT_MODE` from `src/core/constants/shared.ts`. `__EXT_MODE__` is `'ALPHA'` when major version `< 1`, `'DEV'` in dev, else `null`.
-
-**Branding lives in `tools/constants.ts`** (`name`, `description`, `permissions`, `firefoxId`) — that file feeds both the manifest and the UI.
-
-## Browser targeting
-
-`TARGET=firefox` env var drives divergence at three levels:
-
-- `tools/constants.ts` → `isFirefox` (build-time): permissions swap (`cookies` vs `system.display` + `favicon`, via `extension.permissions(firefox)`), Gecko `browser_specific_settings`.
-- `src/core/constants/shared.ts` → `isFirefox = !!browser.runtime?.getBrowserInfo` (**runtime** detection, different mechanism): tab attributes (`cookieStoreId`/`isInReaderMode` vs `groupId`), favicon allowlist, favicon compression.
-- `tools/buildManifest.ts` → background as `scripts[]` (FF) vs `service_worker` (Chromium).
-
-Dev mode for Firefox **downgrades the manifest to MV2** and renames `action` → `browser_action` (`tools/buildManifest.ts`). Production Firefox stays MV3.
-
-## Dev-mode HMR hack
-
-`tools/manifestPlugin.ts` writes each view's `index.html` into `dist/`, replacing `"./main.ts"` with `"http://localhost:<port>/src/<view>/main.ts"`, and loosens `content_security_policy` to allow that port. `<port>` starts as the configured server port and is re-resolved from the dev server on `listening`, so a busy 5173 no longer 404s the pages. `chokidar` watches `src/**/*.html` and re-injects. Non-obvious consequence: **the dev `dist/` is not a valid standalone extension** — it 404s without the vite server running.
+Two consequences leak into everyday work: **dev `dist/` is not a standalone extension** (it 404s without the vite server), and branding lives in `tools/constants.ts`, not in the UI.
 
 ## Architecture
 
 ### Contexts
 
-Four independent JS contexts, each instantiating its own copy of the Svelte store singletons:
+Four independent JS contexts, each with its own copy of the store singletons:
 
 - **background** (`src/background/background.ts`) — alarms (`tabitha-autosave`), context menus (`tabitha-save`, `tabitha-save-window`), message router for tab/window opening.
 - **popup** (`src/popup/`) — the browser action panel.
-- **full view** — the _same_ `src/popup/index.html` opened as a tab with `?tab=true`. `isPopup` (`src/core/constants/popup.ts`) is the only discriminator; `popup.svelte` redirects to full view and self-closes when `settings.popupView` is false.
-- **options** (`src/options/`) — `open_in_tab: true`. Five pages behind a location-hash router (`General` / `Tags` / `Backup` / `Shortcuts` / `About`); `Tab.svelte` reads `location.href.split("#")[1]`, default `general`. Adding a page means a `<Tab>` plus a branch in `options.svelte`.
+- **full view** — the _same_ `src/popup/index.html` opened as a tab with `?tab=true`. `isPopup` (`src/core/constants/popup.ts`) is the only discriminator; `popup.svelte` redirects and self-closes when `settings.popupView` is false.
+- **options** (`src/options/`) — `open_in_tab: true`. Five pages behind a hash router (`General` / `Tags` / `Backup` / `Shortcuts` / `About`); `Tab.svelte` reads `location.href.split("#")[1]`, default `general`. A new page means a `<Tab>` plus a branch in `options.svelte`.
 
-Plus **discarded** (`src/discarded/`) — a stub page used for lazy tab restore. Encodes real `url`/`title`/`icon` in query params, shows them as the tab's identity, then `location.href`-redirects on `visibilitychange`. Not a normal UI page.
+Plus **discarded** (`src/discarded/`) — stub page for lazy tab restore. Carries real `url`/`title`/`icon` in query params, shows them as the tab's identity, then `location.href`-redirects on `visibilitychange`. Not a normal UI page.
 
 ### State
 
-Two separate persistence layers — do not conflate:
+Two persistence layers — do not conflate:
 
-- **Settings** → `browser.storage.local` via `src/core/utils/storage.ts` — all keys prefixed `tabitha.` (single choke point: `getStorageItem`/`getStorage`/`setStorage`). Shape is `Settings` (`src/core/types/extension.ts`); defaults live in the `settings` store IIFE.
-- **Sessions** → IndexedDB via `SessionStore` singleton (`src/core/utils/database.ts`). DB `tabitha`, version 3, keyPath `id` (UUID), indexes `title` / `dateSaved` / `tag`.
+- **Settings** → `browser.storage.local` via `src/core/utils/storage.ts`, all keys prefixed `tabitha.` (choke point: `getStorageItem` / `getStorage` / `setStorage`). Shape is `Settings` (`src/core/types/extension.ts`); defaults live in the `settings` IIFE.
+- **Sessions** → IndexedDB via the `SessionStore` singleton (`src/core/utils/database.ts`). DB `tabitha` v3, keyPath `id` (UUID), indexes `title` / `dateSaved` / `tag`.
 
-State (`src/core/state/`) are IIFE-wrapped singletons exposing a curated API, not raw writables. `sessions` owns load/add/put/remove/removeAll/removeTab/selection; `settings` owns `changeSetting`; `tags` and `sessions.loaded` are derived.
+Stores (`src/core/state/`) are IIFE singletons exposing a curated API, not raw writables.
 
-`currentSession` is produced by `src/core/state/currentSession.ts`, not by a component: `createCurrentSessionReader(ports)` owns the tab/window listeners, the 50ms debounce and the `getSession` call, and takes every browser effect as an injected port so it is testable in `vitest` (`currentSession.test.ts`). `sessions.ts` wires the real ports and is the only place that decides **where** "current" is read — every context that loads the store, options page included. `sessions.load()` awaits `current.ready`, so a `selectionId` of `current` resolves against a session that has been read rather than an empty store. `ready` settles after the first read **attempt**, failure included — otherwise one `getSession` rejection would leave `load()` pending and `loaded` false forever. A failed first read therefore leaves `currentSession` `undefined`: `sessions.add` and `sessions.select` guard for it, and anything else reading `get(currentSession)` must too.
+**Writes queue.** Every `sessions` mutation — `add`, `addBackup`, `put`, `remove`, `removeAll`, `removeTab` — goes through one FIFO queue (`createSerializer`, `src/core/utils/serialize.ts`); background holds a second instance for its alarm and context-menu handlers. Queued, never dropped: `add` returning `undefined` means the save failed, never that it was skipped. `busy` is true from enqueue until the queue drains. Add a new mutation to the queue, not beside it. Internal callers (`put` → `remove`, `deleteTab` → `put`) use the raw functions — a queued call from inside a queued slot deadlocks. A held key would fire once per auto-repeat, so `Commands.svelte` drops `ev.repeat`.
 
-`filtered` is a derived store wrapped in an IIFE. `sessions.filter` cursor-scans and deserializes **every** DB record, so the last query result is cached and reused when only `sortMethod` or `tagsFilter` changed. An identical set of filter options means the run came from `sessions`, not the filter UI, which invalidates the cache. A generation counter discards stale in-flight queries.
+The queues are per-context and cannot serialise a background save against a popup save, which share the `lastSaved` guard. `saveSession` therefore reads that guard **after** the tab read, narrowing the overlap to persist + claim. Narrowed, not closed — closing it needs popup saves routed through background.
+
+**`currentSession`** is owned by `src/core/state/currentSession.ts`, not by a component. `createCurrentSessionReader(ports)` holds the tab/window listeners, the 50 ms debounce and the `getSession` call, taking every browser effect as an injected port so it is testable (`currentSession.test.ts`). `sessions.ts` wires the real ports and is the only place deciding **where** "current" is read — in every context that loads the store, options included. `load()` awaits `current.ready`, so `selectionId: "current"` resolves against a session actually read. `ready` settles after the first read **attempt**, failure included — gating it on success would leave `load()` pending and `loaded` false forever after one rejection. So a failed read leaves `currentSession` `undefined`: `sessions.add` and `sessions.select` guard for it, and so must any other reader of `get(currentSession)`.
+
+**`filtered`** is a derived store in an IIFE. `sessions.filter` cursor-scans and deserializes **every** record, so the last result is cached and reused when only `sortMethod` or `tagsFilter` changed. Identical filter options mean the run came from `sessions`, not the filter UI — that invalidates the cache. A generation counter discards stale in-flight queries.
 
 ### Commands
 
-Every user action reachable by key, palette entry, or session-row button is one row of `src/core/commands.ts` — `{ id?, title, hint?, palette, run }`. `id` is a `CommandId` from `keymap.ts`; `title` and `hint` are **derived** from that binding, never written twice. Rebinding a key is a one-file edit in `src/core/constants/keymap.ts`.
+Every action reachable by key, palette entry or session-row button is one row of `src/core/commands.ts`: `{ id?, title, hint?, palette, run }`. `id` is a `CommandId` from `keymap.ts`; `title` and `hint` **derive** from that binding, never written twice. Rebinding a key is a one-file edit in `src/core/constants/keymap.ts`.
 
-- `commands` is derived over a `ports` store. `provideCommandPorts(partial)` registers what a context can offer (`promptTitle`, `focusSearch`, `reveal`, `visibleSessions`) and returns the unregister callback for `onMount`. Ports are optional by design: the options page mounts no list and no search box, so `save` falls back to a timestamp title and `next`/`previous` no-op instead of failing.
-- `runCommand(id)` is the only entry point; it throws on an id nothing binds.
-- `Commands.svelte` (`basic/`) is the **single** `<svelte:window on:keydown>` — one per context, mounted by `popup.svelte` and `options.svelte`. It also renders the palette and the shared confirm modal from `paletteOpen` / `confirmRequest`.
-- `CommandPalette.svelte` is presentational: it filters the table on `palette: true` and renders `hint`.
+- `commands` derives over a `ports` store. `provideCommandPorts(partial)` registers a context's affordances (`promptTitle`, `focusSearch`, `reveal`, `visibleSessions`) and returns the `onMount` unregister. Ports are optional by design: the options page has no list and no search box, so `save` falls back to a timestamp title and `next`/`previous` no-op.
+- `runCommand(id)` is the only entry point; it throws on an unbound id.
+- `Commands.svelte` (`basic/`) is the **single** `<svelte:window on:keydown>`, one per context, mounted by `popup.svelte` and `options.svelte`. It also renders the palette and the shared confirm modal from `paletteOpen` / `confirmRequest`.
+- `CommandPalette.svelte` is presentational — filters on `palette: true`, renders `hint`.
 
-Do not add a second window keydown listener, and do not hand-write a palette hint.
+Never add a second window keydown listener. Never hand-write a palette hint.
 
 ### Cross-context sync
 
 Two channels, both required:
 
-1. `browser.storage.local.onChanged` → `settings.onStorageChange` fans changes into the store, with side-effects on `sortMethod`/`tagsFilter` (filter options). `selectionId` is **not** handled here — selection sync is channel B's job.
-2. `browser.runtime.sendMessage({ message: 'dbChanged', sessions, selectedId })` → every context's `sessions` store listens, re-`set`s, and re-selects. Sent by `notify()` on every mutation (`add`/`put`/`remove`/`removeAll`/`select`), and by background after auto-save. The `sessions.select()` wrapper also selects locally, so selection updates without a storage echo.
+1. `browser.storage.local.onChanged` → `settings.onStorageChange` fans changes into the store, with side-effects on `sortMethod` / `tagsFilter`. `selectionId` is **not** handled here — that is channel 2's job.
+2. `sendMessage({ message: 'dbChanged', sessions, selectedId })` → every context's `sessions` store re-`set`s and re-selects. Sent by `notify()` on every mutation and by background after auto-save. `sessions.select()` also selects locally, so selection updates without a storage echo.
 
-`sendMessage` (`src/core/utils/messages.ts`) is an adapter over `browser.runtime.sendMessage` typed as a discriminated `Message` union; "no receiver" errors are swallowed internally (normal when no extension page is open). Background also accepts `openWindow` / `openTab` / `restoreSession` / `scheduleAutoSave` messages.
+`sendMessage` (`src/core/utils/messages.ts`) wraps `browser.runtime.sendMessage` with a discriminated `Message` union; "no receiver" errors are swallowed (normal when no extension page is open). Background also accepts `openWindow` / `openTab` / `restoreSession` / `scheduleAutoSave`.
 
 ### Two session shapes
 
-Session lists hold **hundreds** of tabs; hydrated windows must never be resident in list context. The type system enforces this:
+Session lists hold **hundreds** of tabs; hydrated windows must never be resident in list context. The types enforce it:
 
-- `SessionSummary` (`src/core/types/extension.ts`) — list shape: `title`, `tabsNumber`, `windowsNumber`, `dateSaved`, `dateModified`, `id`, `tag`, `sites`. **No `windows` property.** `sites` is a `SiteCount[]` of top domains counted once at save time, so a list row can show a domain breakdown without holding windows.
-- `Session extends SessionSummary` — hydrated shape with real `windows: BrowserWindow[]`. Held only by `sessions.selection` and `currentSession`.
+- `SessionSummary` (`src/core/types/extension.ts`) — list shape. **No `windows` property.** `sites` is a `SiteCount[]` of top domains counted at save time, so a row shows a domain breakdown without holding windows.
+- `Session extends SessionSummary` — hydrated, real `windows: BrowserWindow[]`. Held only by `sessions.selection` and `currentSession`.
 
 Rules:
 
-- `sessionStore.iterateSessions` and `sessionStore.filterSessions` return `SessionSummary[]` (windows dropped per record via `toSummary`).
-- `sessionStore.hydrate(summary)` is the only route to windows from a summary; `sessions.selectById` uses it.
-- `sessions` store holds `SessionSummary[]`; `sessions.put()` takes a `Session` and writes back a `SessionSummary`.
+- `iterateSessions` and `filterSessions` return `SessionSummary[]` (windows dropped per record via `toSummary`).
+- `sessionStore.hydrate(summary)` is the only route from a summary to windows; `sessions.selectById` uses it.
+- `sessions` holds `SessionSummary[]`; `sessions.put()` takes a `Session` and writes back a `SessionSummary`.
 - Any refactor that trusts a list item to have `windows` reintroduces the memory regression.
 
-`iterateSessions` also batches: it invokes the callback every `maxBatch` records (50 on initial load) so the UI paints progressively.
+`iterateSessions` batches: the callback fires every `maxBatch` records (50 on initial load) so the UI paints progressively.
 
 ### Import/export
 
 `src/core/utils/backup/`. Own formats only:
 
 - `.tab` — 5-byte ASCII magic `TBTH1` + lz-string `decompressFromUint8Array`
-- `.tab.json` — plain JSON envelope `{ tabitha: 1, sessions }` via `TextDecoder`
+- `.tab.json` — JSON envelope `{ tabitha: 1, sessions }` via `TextDecoder`
 
-Anything else is rejected with an error notification. `exportCompressed` setting selects `.tab` vs `.tab.json` on write.
+Anything else is rejected with an error notification. `exportCompressed` picks `.tab` vs `.tab.json` on write.
 
 ### Styling
 
-UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are **HSL CSS custom properties** with `<alpha-value>` placeholders, defined in `src/core/styles/global.css` and mapped one-to-one in `uno.config.ts`. Tokens are **semantic, not a numeric scale**: `page` / `panel` / `panel-alt` / `line` for surfaces, `ink` / `ink-muted` / `ink-faint` for text, `accent` / `accent-focus` / `accent-soft` / `accent-content` for the teal, plus `ochre` / `success` / `danger` / `link` / `tooltip`. Never reintroduce `surface-1..6`. **Light only** — there is no dark palette, no `.dark` class and no `darkMode` setting; all three were removed deliberately, the poster identity has no dark variant.
+UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are HSL custom properties with `<alpha-value>` placeholders in `src/core/styles/global.css`, mapped one-to-one in `uno.config.ts`. Tokens are **semantic, not a numeric scale**: `page` / `panel` / `panel-alt` / `line` (surfaces), `ink` / `ink-muted` / `ink-faint` (text), `accent` / `accent-focus` / `accent-soft` / `accent-content` (teal), plus `ochre` / `success` / `danger` / `link` / `tooltip`. Never reintroduce `surface-1..6`. **Light only** — no dark palette, no `.dark`, no `darkMode` setting; all three were removed deliberately.
 
-Fonts are self-hosted in `public/font/` and registered in `src/core/styles/fonts.css`: Inter (`font-sans`) and **Oswald** (`font-display`, variable weight 200–700, split into `Oswald.woff2` latin + `Oswald-ext.woff2` latin-ext by `unicode-range`). `h1`/`h2` pick up `font-display` globally. `font-mono` is a system stack with no file — it carries every uppercase micro-label (`.label` in `global.css`) and every count.
+Fonts self-hosted in `public/font/`, registered in `fonts.css`: Inter (`font-sans`), Oswald (`font-display`, variable 200–700, split latin / latin-ext by `unicode-range`). `h1` / `h2` take `font-display` globally. `font-mono` is a system stack with no file — it carries every uppercase micro-label (`.label`) and every count.
 
-Shared classes: `.label` lives in `global.css` because both the popup and the options page use it. `.facts`, `.rule` and `.tool` live in `popup.css`, which **only the popup entry imports** — anything the options page needs must go in `global.css`.
+`.label` lives in `global.css` because popup and options both use it. `.facts`, `.rule` and `.tool` live in `popup.css`, which **only the popup entry imports** — anything options needs goes in `global.css`.
 
 ### Path aliases
 
-Declared **twice** and must be kept in sync: `tsconfig.json` `paths` and `vite.config.ts` `resolve.alias` (`sharedConfig`, inherited by the background config). Aliases: `@` → `src`, plus `@constants` → `src/core/constants`, `@utils` → `src/core/utils`, `@styles` → `src/core/styles`.
+Declared **twice** and must be kept in sync: `tsconfig.json` `paths` and `vite.config.ts` `resolve.alias` (`sharedConfig`, inherited by the background config). `@` → `src`, `@constants` → `src/core/constants`, `@utils` → `src/core/utils`, `@styles` → `src/core/styles`.
 
 ## TypeScript notes
 
-`strict` + `noUncheckedIndexedAccess` + `noUnusedLocals` are on, and `allowJs`/`checkJs` are enabled. Indexed access returns `T | undefined`, which is why non-null assertions (`!`) are dense in existing code — that is deliberate, not sloppiness. `svelte-check` is the only type gate (`noEmit: true`).
+`strict` + `noUncheckedIndexedAccess` + `noUnusedLocals`, plus `allowJs`/`checkJs`. Indexed access returns `T | undefined`, so non-null assertions (`!`) are dense in existing code — deliberate, not sloppiness. `svelte-check` is the only type gate (`noEmit: true`).
 
 ## Known rough edges
 
-Bullets below change how you write code against these modules.
-
-- `settings.init()` has a `loaded` re-entrancy guard that resolves to `{} as Settings` after first run; the comment in `sessions.load` notes unresolved Firefox/Chrome inconsistency.
-- `SessionStore.upgradeSessions` handles 1→2 (`tags` → `tag`, index swapped) and →3 (backfills `sites` via `countSites`); any further schema bump needs a new branch. It is passed as a bare callback (`upgrade: this.upgradeSessions`) and so must never touch `this`.
+- `settings.init()` has a `loaded` re-entrancy guard resolving to `{} as Settings` after first run; `sessions.load`'s comment notes an unresolved Firefox/Chrome inconsistency.
+- `SessionStore.upgradeSessions` handles 1→2 (`tags` → `tag`, index swapped) and →3 (backfills `sites` via `countSites`); a further schema bump needs a new branch. Passed as a bare callback (`upgrade: this.upgradeSessions`), so it must never touch `this`.
 - `compress.ts` returns `undefined` on Chromium by design — all call sites must optional-chain.
-- `sessions.put()` fails loud (`log.error`) when the target id is not in the store — mutate store contents only through the store API (`sessions.put`/`sessions.removeTab`), never by editing list items in place.
+- `sessions.put()` fails loud (`log.error`) when the target id is not in the store. Mutate store contents only through the store API, never by editing list items in place.

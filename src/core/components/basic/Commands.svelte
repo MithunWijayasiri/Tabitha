@@ -19,7 +19,8 @@
   $: if (!confirmOpen) confirmRequest.set(undefined);
 
   function handleKeydown(ev: KeyboardEvent) {
-    if (shouldIgnoreShortcut(ev, true)) return;
+    // Mutations queue rather than drop, so a held key would run once per repeat.
+    if (ev.repeat || shouldIgnoreShortcut(ev, true)) return;
 
     const binding = resolveKeybinding(ev);
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { BrowserTab, BrowserWindow, Session } from "@/core/types";
 import { createSaveSession, type SaveSessionPorts } from "./saveSession";
+import { sessionSignature } from "./sessionSignature";
 
 vi.mock("webextension-polyfill", () => {
   const local = {
@@ -178,5 +179,34 @@ describe("saveSession", () => {
 
     expect(first.status).toBe("saved");
     expect(second.status).toBe("unchanged");
+  });
+
+  // The other context is background; only a guard read taken after the tab read sees it.
+  it("sees a guard written by another context while the tabs were read", async () => {
+    let lastSaved = { signature: "" };
+
+    const ports = makePorts({
+      getStorage: vi.fn(async () => ({
+        excludePinned: false,
+        urlFilterList: undefined,
+        lastSaved,
+        lastAutoSaved: "",
+      })),
+      getSession: vi.fn(async () => {
+        const session = liveSession();
+
+        lastSaved = { signature: sessionSignature(session) };
+
+        return session;
+      }),
+    });
+
+    const result = await createSaveSession(ports)({
+      source: "popup",
+      title: "Title",
+    });
+
+    expect(result.status).toBe("unchanged");
+    expect(ports.persist).not.toHaveBeenCalled();
   });
 });
