@@ -215,6 +215,7 @@ export const sessions = (() => {
     }
 
     settings.changeSetting("lastSaved", { signature: "" });
+    settings.changeSetting("lastAutoSaved", "");
 
     set([]); //Empty the array, no longer needed
 

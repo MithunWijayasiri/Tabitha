@@ -36,6 +36,7 @@ export const settings = (() => {
     tagsFilter: "__all__",
     updated: false,
     lastSaved: { signature: "" },
+    lastAutoSaved: "",
   };
 
   const { subscribe, set, update } = writable(defaultSettings);

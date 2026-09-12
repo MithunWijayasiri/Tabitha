@@ -89,4 +89,7 @@ export interface Settings {
   /* Last manual save of the current session. Persisted so the duplicate guard
      survives the popup closing, and shared so every context agrees. */
   lastSaved: { id?: SessionSummary["id"]; signature: string };
+  /* Signature of the newest autosave, kept apart from lastSaved so a background
+     snapshot never disables the Save button. */
+  lastAutoSaved: string;
 }

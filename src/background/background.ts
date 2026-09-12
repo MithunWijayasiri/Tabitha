@@ -6,6 +6,7 @@ import { generateSession } from "@/core/utils/generateSession";
 import { getStorage, setStorage } from "@/core/utils/storage";
 import { log } from "@/core/utils/log";
 import { formatTimestamp } from "@/core/utils/formatTimestamp";
+import { sessionSignature } from "@/core/utils/sessionSignature";
 import { autoSaveDefaults } from "@/core/constants/shared";
 import type { Session, Settings } from "@/core/types";
 import { sendMessage, type Message } from "@/core/utils/messages";
@@ -32,10 +33,21 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "tabitha-autosave") {
     try {
       const session = await getSession();
+
+      const signature = sessionSignature(session);
+
+      const { lastAutoSaved } = await getStorage({ lastAutoSaved: "" });
+
+      /* Skips the whole run, eviction included: an idle browser would otherwise
+         fill autoSaveMaxSessions with copies and evict real older snapshots. */
+      if (signature === lastAutoSaved) return;
+
       session.title = "Autosave";
       session.tag = "Autosave";
 
       await sessionStore.saveSession(generateSession(session));
+
+      await setStorage({ lastAutoSaved: signature });
     } catch (error) {
       log.error("autosave failed:", error);
     }
@@ -98,7 +110,16 @@ browser.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
         session.title = title;
 
         try {
-          await sessionStore.saveSession(generateSession(session));
+          const generated = generateSession(session);
+
+          await sessionStore.saveSession(generated);
+
+          await setStorage({
+            lastSaved: {
+              id: generated.id,
+              signature: sessionSignature(session),
+            },
+          });
         } catch (error) {
           log.error("context save failed:", error);
         }
