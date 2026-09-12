@@ -3,7 +3,7 @@ import { notification } from "@/core/state";
 import { sessionStore } from "@/core/utils";
 import { BACKUP_MAGIC } from "@/core/utils/backup/decodeSsf";
 import { compressToUint8Array } from "lz-string";
-import type { Session } from "@/core/types";
+import type { Session, SessionSummary } from "@/core/types";
 
 export async function exportBackup(exportCompressed: boolean = false) {
   const date = new Date();
@@ -11,7 +11,15 @@ export async function exportBackup(exportCompressed: boolean = false) {
   let sessions: Session[];
 
   try {
-    sessions = await sessionStore.loadSessions();
+    const summaries: SessionSummary[] = [];
+
+    await sessionStore.iterateSessions("dateSaved", (batch) =>
+      summaries.push(...batch),
+    );
+
+    sessions = await Promise.all(
+      summaries.map((summary) => sessionStore.hydrate(summary)),
+    );
   } catch (error) {
     notification.error("Export failed", (error as Error).message);
 
