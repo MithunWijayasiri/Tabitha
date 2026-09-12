@@ -95,16 +95,18 @@
 <div
   class="relative flex items-center gap-3 pr-3 {selected
     ? 'bg-accent-soft'
-    : 'bg-panel-alt'}"
+    : 'hover:bg-panel-alt'}"
 >
   <span class="w-[5px] self-stretch rounded-r-[3px] bg-accent"></span>
 
   <button
     type="button"
-    class="flex-1 min-w-0 py-3 text-left"
+    class="min-w-0 flex-1 py-2.5 text-left"
     on:click={() => selection.select($session)}
   >
-    <h2 class="truncate text-[15px] leading-tight">Current session</h2>
+    <h2 class="truncate text-[15px] font-medium leading-tight">
+      Current session
+    </h2>
     <span class="facts mt-1.5">
       <span>{windowsCount} {windowsCount === 1 ? "window" : "windows"}</span>
       <span class="sep">&middot;</span>
@@ -114,7 +116,7 @@
 
   <button
     type="button"
-    class="flex-none rounded bg-accent px-3 py-1.5 text-xs font-semibold text-accent-content hover:bg-accent-focus"
+    class="flex-none rounded bg-accent px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent-content hover:bg-accent-focus"
     on:click={() => dispatch("save")}
   >
     Save

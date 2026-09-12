@@ -63,7 +63,6 @@ export interface TagStyle {
 }
 
 export interface Settings {
-  darkMode: boolean;
   popupView: boolean;
   selectionId: "current" | UUID;
   discarded: boolean;

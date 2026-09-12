@@ -78,10 +78,6 @@
       title: "Export sessions to a file",
       run: () => exportBackup($settings.exportCompressed),
     },
-    {
-      title: $settings.darkMode ? "Use the light theme" : "Use the dark theme",
-      run: () => settings.changeSetting("darkMode", !$settings.darkMode),
-    },
     { title: "Open full view", run: openFullView },
     { title: "Open settings", run: openOptions },
   ];

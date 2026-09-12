@@ -34,7 +34,7 @@
 
 {#if window?.tabs?.length}
   <li>
-    <div class="group flex items-center gap-3 pb-1.5 pt-4">
+    <div class="group flex items-center gap-2.5 px-1.5 pb-1 pt-3.5">
       <IconButton
         icon={window?.incognito ? "incognito" : "window"}
         role="img"

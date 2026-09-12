@@ -44,7 +44,7 @@
 </header>
 
 <main class="flex-1 overflow-y-auto">
-  <div class="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-8">
+  <div class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-7">
     {#if group === "tags"}
       <Tags />
     {:else if group === "backup"}

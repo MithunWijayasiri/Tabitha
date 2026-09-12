@@ -3,7 +3,7 @@
   import { EXT_NAME, EXT_VER, EXT_MODE } from "@/core/constants";
 </script>
 
-<Section title="About">
+<Section>
   <dl class="flex flex-col">
     <div class="flex items-center gap-4 border-t border-line py-3">
       <dt class="label flex-1">Extension</dt>

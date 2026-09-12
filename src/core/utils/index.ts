@@ -7,7 +7,6 @@ export * from "./getSession";
 export * from "./highlightMatch";
 export * from "./messages";
 export * from "./storage";
-export * from "./theme";
 export * from "./tooltip";
 export * from "./viewport";
 export * from "./backup";

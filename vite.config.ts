@@ -54,6 +54,10 @@ export default defineConfig({
   build: {
     emptyOutDir: false,
 
+    // crossorigin preload links CORS-fail against chrome-extension:// and log an error;
+    // every chunk is local, so the preload buys nothing
+    modulePreload: false,
+
     // oxc minifier (vite 8 default) DCEs svelte's lazy runtime init (init_operations),
     // producing "Cannot read properties of undefined (reading 'call')"
     minify: "terser",

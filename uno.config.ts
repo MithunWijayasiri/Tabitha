@@ -19,6 +19,7 @@ export default defineConfig({
       panel: token("panel"),
       "panel-alt": token("panel-alt"),
       line: token("line"),
+      field: token("field"),
 
       ink: token("ink"),
       "ink-muted": token("ink-muted"),

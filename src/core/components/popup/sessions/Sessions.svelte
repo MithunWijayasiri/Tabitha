@@ -121,16 +121,12 @@
 
 <div class="flex min-h-0 flex-1">
   <div
-    class="flex w-[280px] flex-none flex-col border-r-[1.5px] border-ink bg-panel xl:w-[340px]"
+    class="flex w-[280px] flex-none flex-col border-r border-line bg-panel xl:w-[340px]"
   >
-    <p class="label px-4 pb-2 pt-3">Current</p>
-
     <CurrentSession on:save={saveAction} />
 
-    <p class="label px-4 pb-2 pt-4">Saved sessions</p>
-
     {#await $filtered}
-      <p class="px-4 text-xs text-ink-faint">Loading sessions…</p>
+      <p class="px-4 py-3 text-xs text-ink-faint">Loading sessions…</p>
     {:then list}
       {#if list?.length}
         <VirtualList items={list} let:item class="flex-1" bind:scrollToIndex>

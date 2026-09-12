@@ -5,14 +5,14 @@
 
 <section>
   {#if title}
-    <h2 class="opsz-lg text-xl leading-none">{title}</h2>
+    <h2 class="opsz-lg text-lg leading-none">{title}</h2>
   {/if}
 
   {#if description}
-    <p class="mt-2 text-xs text-ink-faint">{description}</p>
+    <p class="mt-1.5 max-w-[52ch] text-xs text-ink-faint">{description}</p>
   {/if}
 
-  <div class="mt-4 flex flex-col">
+  <div class="mt-3 flex flex-col">
     <slot />
   </div>
 </section>

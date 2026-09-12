@@ -4,7 +4,6 @@
 </script>
 
 <Section
-  title="Keyboard shortcuts"
   description="These work whenever the panel or the full view has focus and you are not typing in a field."
 >
   {#each keymap as binding (binding.code)}

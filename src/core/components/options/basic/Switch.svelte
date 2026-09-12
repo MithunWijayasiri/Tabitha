@@ -5,7 +5,7 @@
 </script>
 
 <label
-  class="flex cursor-pointer items-center gap-4 border-t border-line py-3 hover:bg-panel-alt"
+  class="flex cursor-pointer items-center gap-4 border-t border-line py-3 hover:bg-panel"
 >
   <span class="min-w-0 flex-1">
     <span class="block text-sm font-medium text-ink">{title}</span>

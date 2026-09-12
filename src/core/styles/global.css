@@ -9,60 +9,38 @@
 }
 
 :root {
-  --page: 96 10% 90%;
-  --panel: 60 20% 98%;
-  --panel-alt: 84 17% 94%;
-  --line: 90 11% 82%;
+  --page: 46 45% 89%;
+  --panel: 43 69% 95%;
+  --panel-alt: 46 45% 89%;
+  --line: 44 29% 77%;
 
-  --ink: 150 12% 10%;
-  --ink-muted: 144 6% 31%;
-  --ink-faint: 138 4% 53%;
+  --ink: 162 24% 8%;
+  --ink-muted: 159 10% 32%;
+  --ink-faint: 154 6% 53%;
 
-  --accent: 171 73% 21%;
-  --accent-focus: 171 70% 27%;
-  --accent-soft: 155 21% 89%;
-  --accent-content: 60 20% 98%;
+  --accent: 171 74% 21%;
+  --accent-focus: 171 73% 14%;
+  --accent-soft: 147 21% 90%;
+  --accent-content: 43 69% 95%;
 
-  --ochre: 39 79% 34%;
-  --success: 160 70% 26%;
-  --danger: 353 57% 41%;
-  --danger-focus: 353 57% 33%;
-  --link: 196 64% 33%;
-  --link-focus: 196 64% 24%;
+  --ochre: 38 72% 42%;
+  --success: 171 74% 21%;
+  --danger: 8 62% 44%;
+  --danger-focus: 8 62% 36%;
+  --link: 196 64% 30%;
+  --link-focus: 196 64% 22%;
 
-  --tooltip: 150 12% 14%;
-  --tooltip-content: 60 20% 98%;
-}
+  --tooltip: 162 24% 8%;
+  --tooltip-content: 43 69% 95%;
 
-.dark {
-  --page: 150 10% 8%;
-  --panel: 150 10% 11%;
-  --panel-alt: 154 9% 15%;
-  --line: 153 9% 20%;
-
-  --ink: 108 12% 92%;
-  --ink-muted: 138 6% 67%;
-  --ink-faint: 142 5% 47%;
-
-  --accent: 167 52% 59%;
-  --accent-focus: 167 55% 68%;
-  --accent-soft: 161 21% 15%;
-  --accent-content: 150 10% 8%;
-
-  --ochre: 39 67% 55%;
-  --success: 160 55% 55%;
-  --danger: 351 68% 65%;
-  --danger-focus: 351 68% 74%;
-  --link: 193 63% 65%;
-  --link-focus: 193 63% 76%;
-
-  --tooltip: 108 12% 92%;
-  --tooltip-content: 150 10% 8%;
+  /* Inputs and keycaps sit on paper and need to read as cut-out fields. */
+  --field: 0 0% 100%;
 }
 
 html,
 body {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -87,6 +65,10 @@ h2 {
 /* Lives here, not in popup.css — the options page uses it too. */
 .label {
   @apply select-none whitespace-nowrap font-mono text-[10px] font-normal uppercase leading-none tracking-[0.16em] text-ink-faint;
+}
+
+.kbd {
+  @apply select-none rounded border border-b-2 border-line bg-field px-1.5 py-1 font-mono text-[10px] uppercase leading-none tracking-wider text-ink-muted;
 }
 
 ::selection {
