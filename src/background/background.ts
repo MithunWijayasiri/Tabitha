@@ -5,6 +5,7 @@ import { getStorage, setStorage } from "@/core/utils/storage";
 import { log } from "@/core/utils/log";
 import { formatTimestamp } from "@/core/utils/formatTimestamp";
 import { saveSession } from "@/core/utils/saveSession";
+import { createSerializer } from "@/core/utils/serialize";
 import { autoSaveDefaults } from "@/core/constants/shared";
 import type { Settings } from "@/core/types";
 import { sendMessage, type Message } from "@/core/utils/messages";
@@ -27,17 +28,8 @@ async function createTimer() {
 
 createTimer();
 
-/* Autosave and context-menu saves both read a save guard, then write it back.
-   Overlapping runs would read a stale signature and save a duplicate. */
-let inFlight: Promise<unknown> = Promise.resolve();
-
-function serialize<T>(action: () => Promise<T>): Promise<T> {
-  const run = inFlight.then(action, action);
-
-  inFlight = run.catch(() => {});
-
-  return run;
-}
+// Autosave and context-menu saves both read a save guard, then write it back.
+const serialize = createSerializer();
 
 browser.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== "tabitha-autosave") return;

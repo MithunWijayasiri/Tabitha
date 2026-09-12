@@ -18,6 +18,7 @@ import {
   isExtensionViewed,
   log,
   saveSession,
+  createSerializer,
   type Message,
 } from "@/core/utils";
 import { createCurrentSessionReader } from "./currentSession";
@@ -32,19 +33,19 @@ export const sessions = (() => {
 
   const loaded = writable(false);
 
-  // True while a mutation runs; a second call is dropped rather than queued.
-  const busy = writable(false);
+  const serialize = createSerializer();
 
-  async function exclusive<T>(action: () => Promise<T>) {
-    if (get(busy)) return;
+  const pending = writable(0);
 
-    busy.set(true);
+  // True from the moment a mutation is queued until the queue drains.
+  const busy = derived(pending, (count) => count > 0);
 
-    try {
-      return await action();
-    } finally {
-      busy.set(false);
-    }
+  function queued<T>(action: () => Promise<T>) {
+    pending.update((count) => count + 1);
+
+    return serialize(action).finally(() =>
+      pending.update((count) => count - 1),
+    );
   }
 
   /*
@@ -415,13 +416,14 @@ export const sessions = (() => {
 
   return {
     subscribe,
-    add: (session: Session) => exclusive(() => add(session)),
-    addBackup: (sessions: Session[]) => exclusive(() => addBackup(sessions)),
-    put,
+    add: (session: Session) => queued(() => add(session)),
+    addBackup: (sessions: Session[]) => queued(() => addBackup(sessions)),
+    put: (target: Session) => queued(() => put(target)),
     filter,
-    remove: (target: SessionSummary) => exclusive(() => remove(target)),
-    removeAll: () => exclusive(removeAll),
-    removeTab: deleteTab,
+    remove: (target: SessionSummary) => queued(() => remove(target)),
+    removeAll: () => queued(removeAll),
+    removeTab: (windowIndex: number, tab?: BrowserTab) =>
+      queued(() => deleteTab(windowIndex, tab)),
     busy: { subscribe: busy.subscribe },
     loaded: { subscribe: loaded.subscribe },
     selection: {

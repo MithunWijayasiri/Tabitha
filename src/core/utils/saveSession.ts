@@ -48,6 +48,13 @@ const guardKeys: Partial<Record<SaveSource, "lastSaved" | "lastAutoSaved">> = {
   popup: "lastSaved",
 };
 
+const storageDefaults: SaveSessionSettings = {
+  excludePinned: true,
+  urlFilterList: undefined,
+  lastSaved: { signature: "" },
+  lastAutoSaved: "",
+};
+
 async function sessionFromWindow(
   ports: Pick<SaveSessionPorts, "getTabs">,
   window: BrowserWindow,
@@ -76,17 +83,8 @@ export function createSaveSession(ports: SaveSessionPorts) {
     tag,
     window,
   }: SaveSessionInput): Promise<SaveSessionResult> {
-    const {
-      excludePinned,
-      urlFilterList: url,
-      lastSaved,
-      lastAutoSaved,
-    } = await ports.getStorage({
-      excludePinned: true,
-      urlFilterList: undefined,
-      lastSaved: { signature: "" },
-      lastAutoSaved: "",
-    });
+    const { excludePinned, urlFilterList: url } =
+      await ports.getStorage(storageDefaults);
 
     const pinned = excludePinned ? false : undefined;
 
@@ -98,17 +96,22 @@ export function createSaveSession(ports: SaveSessionPorts) {
 
     const signature = sessionSignature(session);
     const guardKey = guardKeys[source];
-    const previousSignature =
-      guardKey === "lastAutoSaved"
-        ? lastAutoSaved
-        : guardKey === "lastSaved"
-          ? lastSaved.signature
-          : undefined;
 
-    if (guardKey && signature === previousSignature) {
-      log.warn(`${source} save skipped: nothing changed since the last save`);
+    if (guardKey) {
+      /* Read last, not with the filters: background and popup saves share lastSaved
+         across contexts, and reading the tabs takes long enough for one to overtake. */
+      const guard = await ports.getStorage(storageDefaults);
 
-      return { status: "unchanged" };
+      const previousSignature =
+        guardKey === "lastAutoSaved"
+          ? guard.lastAutoSaved
+          : guard.lastSaved.signature;
+
+      if (signature === previousSignature) {
+        log.warn(`${source} save skipped: nothing changed since the last save`);
+
+        return { status: "unchanged" };
+      }
     }
 
     session.title = title;
