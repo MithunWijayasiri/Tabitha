@@ -19,3 +19,4 @@ export * from "./input";
 export * from "./sessionsFilters";
 export * from "./scrollbar";
 export * from "./tag";
+export * from "./sessionSignature";

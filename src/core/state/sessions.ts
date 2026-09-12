@@ -13,6 +13,7 @@ import {
   generateSession,
   sendMessage,
   filterTagsAndSort,
+  sessionSignature,
   log,
   type Message,
 } from "@/core/utils";
@@ -24,6 +25,27 @@ export const sessions = (() => {
   const selection: Writable<Session> = writable();
 
   const loaded = writable(false);
+
+  // True while a mutation runs; a second call is dropped rather than queued.
+  const busy = writable(false);
+
+  /* Signature of the current session as it was last saved, with the id it was
+     saved under so deleting that session re-enables saving. */
+  const lastSaved = writable<{ id?: Session["id"]; signature: string }>({
+    signature: "",
+  });
+
+  async function exclusive<T>(action: () => Promise<T>) {
+    if (get(busy)) return;
+
+    busy.set(true);
+
+    try {
+      return await action();
+    } finally {
+      busy.set(false);
+    }
+  }
 
   load();
 
@@ -40,11 +62,23 @@ export const sessions = (() => {
   }
 
   async function add(session: Session) {
-    if (!session.windows.length || !session.tabsNumber)
-      return notification.error(
-        "Failed to save empty session",
-        "Session is empty",
+    if (!session.windows.length || !session.tabsNumber) {
+      notification.error("Failed to save empty session", "Session is empty");
+
+      return;
+    }
+
+    const isCurrent = session.id === "current";
+    const signature = sessionSignature(session);
+
+    if (isCurrent && signature === get(lastSaved).signature) {
+      notification.error(
+        "Session already saved",
+        "Nothing changed since the last save",
       );
+
+      return;
+    }
 
     const generated = generateSession(session);
 
@@ -55,6 +89,8 @@ export const sessions = (() => {
 
       return;
     }
+
+    if (isCurrent) lastSaved.set({ id: generated.id, signature });
 
     update((sessions) => {
       sessions.push(toSummary(generated));
@@ -147,6 +183,8 @@ export const sessions = (() => {
       return;
     }
 
+    if (target.id === get(lastSaved).id) lastSaved.set({ signature: "" });
+
     // Re-resolved after the await: a dbChanged broadcast can replace the list mid-delete.
     update((sessions) => {
       const remaining = sessions.filter((session) => session.id !== target.id);
@@ -174,6 +212,8 @@ export const sessions = (() => {
 
       return;
     }
+
+    lastSaved.set({ signature: "" });
 
     set([]); //Empty the array, no longer needed
 
@@ -250,12 +290,14 @@ export const sessions = (() => {
   return {
     subscribe,
     load,
-    add,
+    add: (session: Session) => exclusive(() => add(session)),
     put,
     filter,
-    remove,
-    removeAll,
+    remove: (target: SessionSummary) => exclusive(() => remove(target)),
+    removeAll: () => exclusive(removeAll),
     removeTab: deleteTab,
+    busy: { subscribe: busy.subscribe },
+    savedSignature: derived(lastSaved, ($lastSaved) => $lastSaved.signature),
     loaded: { subscribe: loaded.subscribe },
     selection: {
       subscribe: selection.subscribe,
@@ -336,3 +378,11 @@ export const tags = derived(sessions, ($sessions) => {
 });
 
 export const currentSession: Writable<Session> = writable();
+
+/* True while the current session still matches what was last saved from it -
+   the save action stays disabled until a window or tab changes. */
+export const currentSessionSaved = derived(
+  [currentSession, sessions.savedSignature],
+  ([$current, $signature]) =>
+    !!$signature && sessionSignature($current) === $signature,
+);
