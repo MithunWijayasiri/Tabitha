@@ -14,6 +14,7 @@
   export let open = false;
 
   const selected = sessions.selection;
+  const busy = sessions.busy;
 
   let query = "";
   let inputEl: HTMLInputElement;
@@ -138,6 +139,7 @@
   bind:open={confirmOpen}
   title={confirm.title}
   message={confirm.message}
+  disabled={$busy}
   on:confirm={() => {
     confirm.run();
     confirmOpen = false;

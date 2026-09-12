@@ -7,6 +7,7 @@
   export let title = "Delete session";
   export let message = "Delete this session? This cannot be undone.";
   export let confirmLabel = "Delete";
+  export let disabled = false;
 
   const dispatch = createEventDispatcher();
 </script>
@@ -21,7 +22,8 @@
   <button
     slot="footer"
     type="button"
-    class="rounded bg-danger px-4 py-1.5 text-xs font-semibold text-accent-content hover:bg-danger-focus"
+    {disabled}
+    class="rounded bg-danger px-4 py-1.5 text-xs font-semibold text-accent-content hover:bg-danger-focus disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
     on:click={() => dispatch("confirm")}>{confirmLabel}</button
   >
 </Modal>

@@ -13,6 +13,7 @@ import {
   generateSession,
   sendMessage,
   filterTagsAndSort,
+  sessionSignature,
   log,
   type Message,
 } from "@/core/utils";
@@ -24,6 +25,21 @@ export const sessions = (() => {
   const selection: Writable<Session> = writable();
 
   const loaded = writable(false);
+
+  // True while a mutation runs; a second call is dropped rather than queued.
+  const busy = writable(false);
+
+  async function exclusive<T>(action: () => Promise<T>) {
+    if (get(busy)) return;
+
+    busy.set(true);
+
+    try {
+      return await action();
+    } finally {
+      busy.set(false);
+    }
+  }
 
   load();
 
@@ -40,21 +56,41 @@ export const sessions = (() => {
   }
 
   async function add(session: Session) {
-    if (!session.windows.length || !session.tabsNumber)
-      return notification.error(
-        "Failed to save empty session",
-        "Session is empty",
+    await settings.init(); // lastSaved lives in storage - never compare against a default
+
+    if (!session.windows.length || !session.tabsNumber) {
+      notification.error(
+        "Open a tab before saving",
+        "This session has no tabs",
       );
+
+      return;
+    }
+
+    const isCurrent = session.id === "current";
+    const signature = sessionSignature(session);
+
+    if (isCurrent && signature === get(settings).lastSaved.signature) {
+      notification.error(
+        "Change a tab before saving again",
+        "Nothing changed since the last save",
+      );
+
+      return;
+    }
 
     const generated = generateSession(session);
 
     try {
       await sessionStore.saveSession(generated);
     } catch (error) {
-      notification.error("Failed to save session", (error as Error).message);
+      notification.error("Save failed", (error as Error).message);
 
       return;
     }
+
+    if (isCurrent)
+      settings.changeSetting("lastSaved", { id: generated.id, signature });
 
     update((sessions) => {
       sessions.push(toSummary(generated));
@@ -79,7 +115,7 @@ export const sessions = (() => {
     try {
       await sessionStore.updateSession(target);
     } catch (error) {
-      notification.error("Failed to update session", (error as Error).message);
+      notification.error("Update failed", (error as Error).message);
 
       return;
     }
@@ -127,14 +163,14 @@ export const sessions = (() => {
 
   async function remove(target: SessionSummary) {
     if (!target || !target.id || target.id === "current")
-      return notification.error("Nothing to delete", "Select a session first");
+      return notification.error("Select a session first", "Nothing to delete");
 
     const index = get({ subscribe }).findIndex(
       (session) => session.id === target.id,
     );
 
     if (index === -1) {
-      notification.error("Nothing to delete", "Select a session first");
+      notification.error("Select a session first", "Nothing to delete");
 
       return;
     }
@@ -142,10 +178,13 @@ export const sessions = (() => {
     try {
       await sessionStore.deleteSession(target);
     } catch (error) {
-      notification.error("Failed to delete session", (error as Error).message);
+      notification.error("Delete failed", (error as Error).message);
 
       return;
     }
+
+    if (target.id === get(settings).lastSaved.id)
+      settings.changeSetting("lastSaved", { signature: "" });
 
     // Re-resolved after the await: a dbChanged broadcast can replace the list mid-delete.
     update((sessions) => {
@@ -163,17 +202,20 @@ export const sessions = (() => {
     const length = get({ subscribe }).length;
 
     if (!length) {
-      notification.error("Nothing to delete", "Sessions are already empty");
+      notification.error("Save a session first", "Nothing to delete");
       return;
     }
 
     try {
       await sessionStore.deleteSessions();
     } catch (error) {
-      notification.error("Failed to delete sessions", (error as Error).message);
+      notification.error("Delete failed", (error as Error).message);
 
       return;
     }
+
+    settings.changeSetting("lastSaved", { signature: "" });
+    settings.changeSetting("lastAutoSaved", "");
 
     set([]); //Empty the array, no longer needed
 
@@ -250,12 +292,13 @@ export const sessions = (() => {
   return {
     subscribe,
     load,
-    add,
+    add: (session: Session) => exclusive(() => add(session)),
     put,
     filter,
-    remove,
-    removeAll,
+    remove: (target: SessionSummary) => exclusive(() => remove(target)),
+    removeAll: () => exclusive(removeAll),
     removeTab: deleteTab,
+    busy: { subscribe: busy.subscribe },
     loaded: { subscribe: loaded.subscribe },
     selection: {
       subscribe: selection.subscribe,
@@ -336,3 +379,12 @@ export const tags = derived(sessions, ($sessions) => {
 });
 
 export const currentSession: Writable<Session> = writable();
+
+/* True while the current session still matches what was last saved from it -
+   the save action stays disabled until a window or tab changes. */
+export const currentSessionSaved = derived(
+  [currentSession, settings],
+  ([$current, $settings]) =>
+    !!$settings.lastSaved.signature &&
+    sessionSignature($current) === $settings.lastSaved.signature,
+);

@@ -1,13 +1,7 @@
 <script lang="ts">
   import { EXT_NAME, isPopup } from "@/core/constants";
-  import { filterOptions, notification, sessions } from "@/core/state";
-  import {
-    SearchBar,
-    Notification,
-    IconButton,
-    Sorting,
-    TagFilter,
-  } from "@/core/components";
+  import { filterOptions, sessions } from "@/core/state";
+  import { SearchBar, IconButton, Sorting, TagFilter } from "@/core/components";
   import { openFullView, openOptions } from "@utils/extension";
   import { tooltip } from "@/core/utils";
 
@@ -64,5 +58,3 @@
     </button>
   </div>
 </header>
-
-<Notification detail={$notification} />

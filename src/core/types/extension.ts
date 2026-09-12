@@ -56,6 +56,8 @@ export type Icon =
 export interface UiNotification {
   type: "info" | "success" | "warning" | "error";
   msg: string;
+  /* Cause behind msg. Shown next to it and logged - never the only thing that matters. */
+  detail?: string;
   duration?: number;
 }
 
@@ -84,4 +86,10 @@ export interface Settings {
   sortMethod: SortMethod;
   tagsFilter: "__all__" | (string & NonNullable<unknown>);
   updated: boolean;
+  /* Last manual save of the current session. Persisted so the duplicate guard
+     survives the popup closing, and shared so every context agrees. */
+  lastSaved: { id?: SessionSummary["id"]; signature: string };
+  /* Signature of the newest autosave, kept apart from lastSaved so a background
+     snapshot never disables the Save button. */
+  lastAutoSaved: string;
 }

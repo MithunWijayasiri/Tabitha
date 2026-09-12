@@ -19,6 +19,7 @@
   import { resolveKeybinding } from "@/core/constants";
 
   const selection = sessions.selection;
+  const busy = sessions.busy;
 
   $: if ($selection && typeof scrollToIndex !== "undefined" && !isScrolled) {
     isScrolled = true;
@@ -42,6 +43,8 @@
     $currentSession.title = title;
 
     const id = await sessions.add($currentSession);
+
+    if (!id) return;
 
     scrollToIndex($sessions.findIndex((session) => session.id === id));
   }
@@ -195,6 +198,7 @@
   title="Delete session"
   message="Delete “{$selection?.title ?? ''}”? This cannot be undone."
   confirmLabel="Delete"
+  disabled={$busy}
   on:confirm={async () => {
     await sessions.remove($selection);
 

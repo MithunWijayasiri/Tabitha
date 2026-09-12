@@ -35,6 +35,8 @@ export const settings = (() => {
     sortMethod: "newest",
     tagsFilter: "__all__",
     updated: false,
+    lastSaved: { signature: "" },
+    lastAutoSaved: "",
   };
 
   const { subscribe, set, update } = writable(defaultSettings);

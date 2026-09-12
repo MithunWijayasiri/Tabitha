@@ -1,7 +1,12 @@
 <script lang="ts">
   import browser from "webextension-polyfill";
   import { createEventDispatcher, onDestroy } from "svelte";
-  import { settings, sessions, currentSession as session } from "@/core/state";
+  import {
+    settings,
+    sessions,
+    currentSessionSaved,
+    currentSession as session,
+  } from "@/core/state";
   import { countSites, getSession, isExtensionViewed } from "@/core/utils";
   import { SiteChips } from "@/core/components";
 
@@ -10,6 +15,7 @@
   let timeout: NodeJS.Timeout;
 
   const selection = sessions.selection;
+  const busy = sessions.busy;
 
   $: selected = $selection === $session;
 
@@ -121,7 +127,8 @@
 
   <button
     type="button"
-    class="flex-none rounded bg-accent px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent-content hover:bg-accent-focus"
+    disabled={$busy || $currentSessionSaved}
+    class="flex-none rounded bg-accent px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent-content hover:bg-accent-focus disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
     on:click={() => dispatch("save")}
   >
     Save

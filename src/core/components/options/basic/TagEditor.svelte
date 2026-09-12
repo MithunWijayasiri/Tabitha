@@ -35,7 +35,10 @@
 
       $settings.tags[tagName]!.name = tagName;
 
-      return notification.error("Tag not renamed", `“${value}” already exists`);
+      return notification.error(
+        "Choose a different tag name",
+        `“${value}” already exists`,
+      );
     }
 
     $settings.tags[value] = $settings.tags[tagName]!;
@@ -115,7 +118,7 @@
 
         if (Object.hasOwn($settings.tags, addedTag.name))
           return notification.error(
-            "Tag not added",
+            "Choose a different tag name",
             `“${addedTag.name}” already exists`,
           );
 
