@@ -14,10 +14,15 @@ import {
   sendMessage,
   filterTagsAndSort,
   sessionSignature,
+  getSession,
+  isExtensionViewed,
   log,
   type Message,
 } from "@/core/utils";
+import { createCurrentSessionReader } from "./currentSession";
 import browser from "webextension-polyfill";
+
+export const currentSession: Writable<Session> = writable();
 
 export const sessions = (() => {
   const { subscribe, set, update }: Writable<SessionSummary[]> = writable([]);
@@ -41,6 +46,57 @@ export const sessions = (() => {
     }
   }
 
+  /*
+   * The current session is read in every context that loads this store, popup row
+   * or not: the palette offers "save current session" everywhere, and a value
+   * snapshotted at load time would save the wrong tabs. No component owns it.
+   */
+  const current = createCurrentSessionReader({
+    store: currentSession,
+
+    read: async () => {
+      await settings.init(); // the filters come from storage - never from the defaults
+
+      const { excludePinned, urlFilterList } = get(settings);
+
+      return getSession({
+        pinned: excludePinned ? false : undefined,
+        url: urlFilterList,
+      });
+    },
+
+    watch: (events) => {
+      browser.windows.onFocusChanged.addListener(events.changed);
+      browser.tabs.onCreated.addListener(events.changed);
+      browser.tabs.onUpdated.addListener(events.changed);
+      browser.tabs.onActivated.addListener(events.changed);
+      browser.tabs.onMoved.addListener(events.changed);
+      browser.tabs.onDetached.addListener(events.changed);
+      browser.tabs.onRemoved.addListener(events.removed);
+
+      return () => {
+        browser.windows.onFocusChanged.removeListener(events.changed);
+        browser.tabs.onCreated.removeListener(events.changed);
+        browser.tabs.onUpdated.removeListener(events.changed);
+        browser.tabs.onActivated.removeListener(events.changed);
+        browser.tabs.onMoved.removeListener(events.changed);
+        browser.tabs.onDetached.removeListener(events.changed);
+        browser.tabs.onRemoved.removeListener(events.removed);
+      };
+    },
+
+    visible: isExtensionViewed,
+
+    onVisibilityChange: (handler) =>
+      document.addEventListener("visibilitychange", handler),
+
+    selectedId: () => get(settings).selectionId,
+
+    select: (session) => selection.set(session),
+
+    removeTab: deleteTab,
+  });
+
   load();
 
   async function load() {
@@ -49,6 +105,8 @@ export const sessions = (() => {
     await settings.init(); // to fix inconsistent behaviour with FF and Chrome - need to check
 
     const { selectionId } = get(settings);
+
+    await current.ready; // "current" holds no value until the first read lands
 
     selectById(selectionId);
 
@@ -377,8 +435,6 @@ export const tags = derived(sessions, ($sessions) => {
 
   return tagsList;
 });
-
-export const currentSession: Writable<Session> = writable();
 
 /* True while the current session still matches what was last saved from it -
    the save action stays disabled until a window or tab changes. */
