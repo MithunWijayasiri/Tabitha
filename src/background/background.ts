@@ -1,14 +1,12 @@
 import browser from "webextension-polyfill";
 import { createTab, openInNewWindow, openSession } from "./utils/browser";
-import { getSession, getTabs } from "@/core/utils/getSession";
 import { sessionStore } from "@/core/utils/database";
-import { generateSession } from "@/core/utils/generateSession";
 import { getStorage, setStorage } from "@/core/utils/storage";
 import { log } from "@/core/utils/log";
 import { formatTimestamp } from "@/core/utils/formatTimestamp";
-import { sessionSignature } from "@/core/utils/sessionSignature";
+import { saveSession } from "@/core/utils/saveSession";
 import { autoSaveDefaults } from "@/core/constants/shared";
-import type { Session, Settings } from "@/core/types";
+import type { Settings } from "@/core/types";
 import { sendMessage, type Message } from "@/core/utils/messages";
 
 async function createTimer() {
@@ -46,35 +44,11 @@ browser.alarms.onAlarm.addListener((alarm) => {
 
   serialize(async () => {
     try {
-      const {
-        excludePinned,
-        urlFilterList: url,
-        lastAutoSaved,
-      } = await getStorage({
-        excludePinned: true,
-        urlFilterList: undefined,
-        lastAutoSaved: "",
-      } as Settings);
-
-      const session = await getSession({
-        pinned: excludePinned ? false : undefined,
-        url,
+      await saveSession({
+        source: "autosave",
+        title: "Autosave",
+        tag: "Autosave",
       });
-
-      if (!session.tabsNumber) return;
-
-      const signature = sessionSignature(session);
-
-      /* Skips the whole run, eviction included: an idle browser would otherwise
-         fill autoSaveMaxSessions with copies and evict real older snapshots. */
-      if (signature === lastAutoSaved) return;
-
-      session.title = "Autosave";
-      session.tag = "Autosave";
-
-      await sessionStore.saveSession(generateSession(session));
-
-      await setStorage({ lastAutoSaved: signature });
     } catch (error) {
       log.error("autosave failed:", error);
     }
@@ -117,53 +91,14 @@ browser.runtime.onInstalled.addListener((details) => {
 
 browser.contextMenus.onClicked.addListener(({ menuItemId }, tab) => {
   serialize(async () => {
-    const {
-      excludePinned,
-      urlFilterList: url,
-      lastSaved,
-    } = await getStorage({
-      excludePinned: true,
-      urlFilterList: undefined,
-      lastSaved: { signature: "" },
-    } as Settings);
-
-    const pinned = excludePinned ? false : undefined;
     const title = formatTimestamp(Date.now());
 
     switch (menuItemId) {
       case "tabitha-save":
-        {
-          const session = await getSession({
-            pinned,
-            url,
-          });
-
-          if (!session.tabsNumber) return;
-
-          const signature = sessionSignature(session);
-
-          // Same guard as the popup: an unchanged current session is not saved twice.
-          if (signature === lastSaved.signature) {
-            log.warn(
-              "context save skipped: nothing changed since the last save",
-            );
-
-            return;
-          }
-
-          session.title = title;
-
-          try {
-            const generated = generateSession(session);
-
-            await sessionStore.saveSession(generated);
-
-            await setStorage({
-              lastSaved: { id: generated.id, signature },
-            });
-          } catch (error) {
-            log.error("context save failed:", error);
-          }
+        try {
+          await saveSession({ source: "context-menu", title });
+        } catch (error) {
+          log.error("context save failed:", error);
         }
         break;
       case "tabitha-save-window":
@@ -177,19 +112,8 @@ browser.contextMenus.onClicked.addListener(({ menuItemId }, tab) => {
               ? await browser.windows.getCurrent({ populate: false })
               : await browser.windows.get(tab.windowId);
 
-          window.tabs = await getTabs({ pinned, url, windowId: window.id });
-
-          if (!window.tabs?.length) return;
-
-          const session = {
-            title,
-            windows: [window],
-            windowsNumber: 1,
-            tabsNumber: window.tabs.length,
-          } as Session;
-
           try {
-            await sessionStore.saveSession(generateSession(session));
+            await saveSession({ source: "save-window", title, window });
           } catch (error) {
             log.error("context save failed:", error);
           }

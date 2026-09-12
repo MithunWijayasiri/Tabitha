@@ -20,3 +20,4 @@ export * from "./sessionsFilters";
 export * from "./scrollbar";
 export * from "./tag";
 export * from "./sessionSignature";
+export * from "./saveSession";
