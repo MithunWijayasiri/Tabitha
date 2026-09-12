@@ -29,8 +29,22 @@ async function createTimer() {
 
 createTimer();
 
-browser.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === "tabitha-autosave") {
+/* Autosave and context-menu saves both read a save guard, then write it back.
+   Overlapping runs would read a stale signature and save a duplicate. */
+let inFlight: Promise<unknown> = Promise.resolve();
+
+function serialize<T>(action: () => Promise<T>): Promise<T> {
+  const run = inFlight.then(action, action);
+
+  inFlight = run.catch(() => {});
+
+  return run;
+}
+
+browser.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== "tabitha-autosave") return;
+
+  serialize(async () => {
     try {
       const {
         excludePinned,
@@ -81,7 +95,7 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     await sessionStore.iterateSessions("dateSaved", (sessions) => {
       sendMessage({ message: "dbChanged", sessions, selectedId: selectionId });
     });
-  }
+  });
 });
 
 browser.runtime.onInstalled.addListener((details) => {
@@ -101,73 +115,88 @@ browser.runtime.onInstalled.addListener((details) => {
   });
 });
 
-browser.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
-  const { excludePinned, urlFilterList: url } = await getStorage({
-    excludePinned: true,
-    urlFilterList: undefined,
-  } as Settings);
+browser.contextMenus.onClicked.addListener(({ menuItemId }, tab) => {
+  serialize(async () => {
+    const {
+      excludePinned,
+      urlFilterList: url,
+      lastSaved,
+    } = await getStorage({
+      excludePinned: true,
+      urlFilterList: undefined,
+      lastSaved: { signature: "" },
+    } as Settings);
 
-  const pinned = excludePinned ? false : undefined;
-  const title = formatTimestamp(Date.now());
+    const pinned = excludePinned ? false : undefined;
+    const title = formatTimestamp(Date.now());
 
-  switch (menuItemId) {
-    case "tabitha-save":
-      {
-        const session = await getSession({
-          pinned,
-          url,
-        });
-
-        if (!session.tabsNumber) return;
-
-        session.title = title;
-
-        try {
-          const generated = generateSession(session);
-
-          await sessionStore.saveSession(generated);
-
-          await setStorage({
-            lastSaved: {
-              id: generated.id,
-              signature: sessionSignature(session),
-            },
+    switch (menuItemId) {
+      case "tabitha-save":
+        {
+          const session = await getSession({
+            pinned,
+            url,
           });
-        } catch (error) {
-          log.error("context save failed:", error);
+
+          if (!session.tabsNumber) return;
+
+          const signature = sessionSignature(session);
+
+          // Same guard as the popup: an unchanged current session is not saved twice.
+          if (signature === lastSaved.signature) {
+            log.warn(
+              "context save skipped: nothing changed since the last save",
+            );
+
+            return;
+          }
+
+          session.title = title;
+
+          try {
+            const generated = generateSession(session);
+
+            await sessionStore.saveSession(generated);
+
+            await setStorage({
+              lastSaved: { id: generated.id, signature },
+            });
+          } catch (error) {
+            log.error("context save failed:", error);
+          }
         }
-      }
-      break;
-    case "tabitha-save-window":
-      {
-        /*
-         * Taken from the clicked tab where possible: window focus can move while the
-         * storage read settles, and getCurrent() would then resolve the wrong window.
-         */
-        const window =
-          tab?.windowId === undefined
-            ? await browser.windows.getCurrent({ populate: false })
-            : await browser.windows.get(tab.windowId);
+        break;
+      case "tabitha-save-window":
+        {
+          /*
+           * Taken from the clicked tab where possible: window focus can move while the
+           * storage read settles, and getCurrent() would then resolve the wrong window.
+           */
+          const window =
+            tab?.windowId === undefined
+              ? await browser.windows.getCurrent({ populate: false })
+              : await browser.windows.get(tab.windowId);
 
-        window.tabs = await getTabs({ pinned, url, windowId: window.id });
+          window.tabs = await getTabs({ pinned, url, windowId: window.id });
 
-        if (!window.tabs?.length) return;
+          if (!window.tabs?.length) return;
 
-        const session = {
-          title,
-          windows: [window],
-          windowsNumber: 1,
-          tabsNumber: window.tabs.length,
-        } as Session;
+          const session = {
+            title,
+            windows: [window],
+            windowsNumber: 1,
+            tabsNumber: window.tabs.length,
+          } as Session;
 
-        try {
-          await sessionStore.saveSession(generateSession(session));
-        } catch (error) {
-          log.error("context save failed:", error);
+          try {
+            await sessionStore.saveSession(generateSession(session));
+          } catch (error) {
+            log.error("context save failed:", error);
+          }
         }
-      }
-      break;
-  }
+        break;
+    }
+  });
 });
 
 browser.runtime.onMessage.addListener((request: unknown) => {
