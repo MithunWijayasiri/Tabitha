@@ -45,4 +45,13 @@
 
 <Header />
 <Sessions />
+
+<footer
+  class="flex flex-none items-center gap-1.5 border-t border-line bg-panel px-4 py-1.5"
+>
+  <kbd class="kbd">Ctrl</kbd>
+  <kbd class="kbd">K</kbd>
+  <span class="label ml-1.5">Command palette</span>
+</footer>
+
 <CommandPalette bind:open />

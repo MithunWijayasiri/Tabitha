@@ -1,6 +1,11 @@
 import type { UUID } from "crypto";
 import type { BrowserWindow } from "@/core/types";
 
+export interface SiteCount {
+  domain: string;
+  count: number;
+}
+
 export interface SessionSummary {
   title: string;
   tabsNumber: number;
@@ -9,6 +14,8 @@ export interface SessionSummary {
   dateModified: number | undefined;
   id: UUID | "current";
   tag?: string;
+  /* Top domains only, counted once at save time: a list row never holds windows. */
+  sites?: SiteCount[];
 }
 
 export interface Session extends SessionSummary {
@@ -63,7 +70,6 @@ export interface TagStyle {
 }
 
 export interface Settings {
-  darkMode: boolean;
   popupView: boolean;
   selectionId: "current" | UUID;
   discarded: boolean;

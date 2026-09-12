@@ -4,10 +4,7 @@
   import { exportBackup, importBackup } from "@/core/utils";
 </script>
 
-<Section
-  title="Backup"
-  description="Write every saved session to a file, or read sessions back in from one."
->
+<Section>
   <Switch
     title="Compress the export file"
     description="Writes a .tab file. Turn this off to write readable .tab.json instead."
@@ -27,7 +24,7 @@
     </button>
 
     <label
-      class="cursor-pointer rounded border border-line px-4 py-1.5 text-xs font-semibold text-ink-muted hover:bg-panel-alt hover:text-ink"
+      class="cursor-pointer rounded border border-line px-4 py-1.5 text-xs font-semibold text-ink-muted hover:bg-panel hover:text-ink"
     >
       Import sessions
       <input

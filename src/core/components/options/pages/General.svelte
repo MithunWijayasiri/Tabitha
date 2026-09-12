@@ -34,21 +34,12 @@
       settings.changeSetting("popupView", !$settings.popupView);
     }}
   />
-
-  <Switch
-    title="Dark theme"
-    checked={$settings.darkMode}
-    on:change={() => settings.changeSetting("darkMode", !$settings.darkMode)}
-  />
 </Section>
 
-<Section
-  title="Saving sessions"
-  description="What Tabitha writes down when you save."
->
+<Section title="Saving sessions">
   <Switch
     title="Skip the name prompt when saving"
-    description="Saves straight away under the name “Unnamed session”. Rename it later."
+    description="Saves straight away, named with the date and time. Rename it later."
     checked={$settings.doNotAskForTitle}
     on:change={() => {
       settings.changeSetting("doNotAskForTitle", !$settings.doNotAskForTitle);
@@ -76,17 +67,14 @@
       placeholder={`https://*.google.com/*
 https://www.youtube.com/*
 file:///*/*`}
-      class="mt-1 resize-none rounded border border-line bg-panel-alt p-2.5 font-mono text-xs text-ink outline-none placeholder:text-ink-faint focus:border-accent"
+      class="mt-1 resize-none rounded border border-line bg-panel p-2.5 font-mono text-xs text-ink outline-none placeholder:text-ink-faint focus:border-accent"
       inputmode="url"
       value={urlList}
       on:change={(ev) => handleFilterListChange(ev, urlList)}></textarea>
   </label>
 </Section>
 
-<Section
-  title="Automatic saving"
-  description="Tabitha saves your open windows on a timer and keeps the most recent ones."
->
+<Section title="Automatic saving">
   <Switch
     title="Save the current session on a timer"
     checked={$settings.autoSave}
@@ -113,7 +101,7 @@ file:///*/*`}
     </span>
     <input
       type="number"
-      class="h-8 w-16 flex-none rounded border border-line bg-panel-alt text-center text-sm font-medium text-ink outline-none focus:border-accent"
+      class="h-8 w-16 flex-none rounded border border-line bg-panel text-center text-sm font-medium text-ink outline-none focus:border-accent"
       min="1"
       max="15"
       value={$settings.autoSaveMaxSessions}
@@ -135,7 +123,7 @@ file:///*/*`}
     </span>
     <input
       type="number"
-      class="h-8 w-16 flex-none rounded border border-line bg-panel-alt text-center text-sm font-medium text-ink outline-none focus:border-accent"
+      class="h-8 w-16 flex-none rounded border border-line bg-panel text-center text-sm font-medium text-ink outline-none focus:border-accent"
       min="1"
       value={$settings.autoSaveTimer}
       on:change={(event) => {
@@ -161,14 +149,11 @@ file:///*/*`}
   <div class="border-t border-line py-3">
     <button
       type="button"
-      class="rounded border border-danger px-4 py-1.5 text-xs font-semibold text-danger hover:bg-danger hover:text-white"
+      class="rounded border border-danger px-4 py-1.5 text-xs font-semibold text-danger hover:bg-danger hover:text-accent-content"
       on:click={() => (resetShow = true)}
     >
       Reset all settings
     </button>
-    <p class="mt-2 text-xs text-ink-faint">
-      Puts every setting back to its default. Your saved sessions are kept.
-    </p>
   </div>
 </Section>
 

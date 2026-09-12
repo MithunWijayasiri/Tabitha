@@ -2,8 +2,9 @@
   import { notification, settings } from "@/core/state";
   import { ColorInput, IconButton, Tag } from "@/core/components";
   import { addTag } from "@/core/utils";
+  import { defaultTagStyle } from "@/core/constants";
 
-  let addedTag = { name: "", bgColor: "royalblue", textColor: "white" };
+  let addedTag = { name: "", ...defaultTagStyle };
 
   function onInput(
     ev: Event & {
@@ -123,7 +124,7 @@
           textColor: addedTag.textColor,
         });
 
-        addedTag = { name: "", bgColor: "royalblue", textColor: "white" };
+        addedTag = { name: "", ...defaultTagStyle };
       }}>Add tag</button
     >
   </div>

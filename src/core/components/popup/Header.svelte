@@ -20,9 +20,9 @@
 </script>
 
 <header
-  class="flex flex-none items-center gap-3 border-b-[1.5px] border-ink bg-panel px-4 py-2.5"
+  class="flex flex-none items-center gap-3 border-b-[1.5px] border-ink bg-panel px-4 py-2"
 >
-  <h1 class="opsz-lg text-[22px] leading-none">{EXT_NAME}</h1>
+  <h1 class="text-[22px] leading-none">{EXT_NAME}</h1>
 
   <p class="label pt-1">
     {count}

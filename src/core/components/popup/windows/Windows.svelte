@@ -34,14 +34,16 @@
   }
 </script>
 
-<div class="flex min-h-0 flex-col {className}">
+<div class="flex min-h-0 flex-col bg-panel-alt {className}">
   {#if hasTabs}
-    <div class="flex-none border-b-[1.5px] border-ink px-5 py-3">
-      <h2 class="opsz-lg truncate text-[21px] leading-tight">
+    <div
+      class="flex flex-none items-baseline gap-2.5 border-b border-line px-5 py-2.5"
+    >
+      <h2 class="min-w-0 truncate text-[19px] leading-tight">
         {current ? "Current session" : $session.title}
       </h2>
 
-      <p class="facts mt-2">
+      <p class="facts flex-none">
         <span>{current ? "Open now" : `Saved ${savedAt}`}</span>
         <span class="sep">&middot;</span>
         <span
@@ -67,8 +69,8 @@
 
     <ul
       bind:this={ulEl}
-      class="flex-1 overflow-y-auto pb-4 pl-5"
-      style:padding-right="calc(1.25rem + {scrollBarPadding})"
+      class="flex-1 overflow-y-auto pb-4 pl-4"
+      style:padding-right="calc(1rem + {scrollBarPadding})"
     >
       {#each $session.windows as window, windowIndex (window.id)}
         <Window

@@ -31,7 +31,7 @@
 
 {#if tab?.url}
   <li
-    class="group flex items-center gap-2.5 border-b border-line/60 py-1.5 pl-1 pr-1"
+    class="group flex items-center gap-2.5 rounded-sm px-1.5 py-1 hover:bg-line/40"
   >
     {#if favIconUrl}
       <img

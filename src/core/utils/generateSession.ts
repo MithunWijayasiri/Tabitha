@@ -1,4 +1,5 @@
 import type { Session } from "@/core/types";
+import { countSites } from "./sessionSites";
 
 export function generateSession(session: Session): Session {
   const date = Date.now();
@@ -12,5 +13,6 @@ export function generateSession(session: Session): Session {
     dateModified: date,
     id: crypto.randomUUID(),
     tag: session.tag,
+    sites: countSites(session.windows),
   };
 }

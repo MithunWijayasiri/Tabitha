@@ -21,7 +21,7 @@
   <button
     slot="footer"
     type="button"
-    class="rounded bg-danger px-4 py-1.5 text-xs font-semibold text-white hover:bg-danger-focus"
+    class="rounded bg-danger px-4 py-1.5 text-xs font-semibold text-accent-content hover:bg-danger-focus"
     on:click={() => dispatch("confirm")}>{confirmLabel}</button
   >
 </Modal>

@@ -2,7 +2,7 @@
   import type { SessionSummary } from "@/core/types";
   import { createEventDispatcher } from "svelte";
   import { settings, filterOptions, sessions } from "@/core/state";
-  import { IconButton } from "@/core/components";
+  import { IconButton, SiteChips } from "@/core/components";
   import {
     sendMessage,
     highlightMatch,
@@ -78,6 +78,8 @@
           >
         {/if}
       </span>
+
+      <SiteChips sites={session.sites} tabsNumber={session.tabsNumber} />
     </button>
   </div>
 

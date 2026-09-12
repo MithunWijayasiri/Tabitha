@@ -6,7 +6,6 @@ import {
   getStorage,
   setStorage,
   STORAGE_PREFIX,
-  applyTheme,
   getStorageItem,
   log,
 } from "@/core/utils";
@@ -23,7 +22,6 @@ export const settings = (() => {
 
   const defaultSettings: Settings = {
     popupView: true,
-    darkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
     selectionId: "current",
     discarded: true,
     urlFilterList: undefined,
@@ -59,8 +57,6 @@ export const settings = (() => {
 
     set(settings);
 
-    applyTheme(settings.darkMode, false);
-
     filterOptions.set({
       sortMethod: settings.sortMethod,
       tagsFilter: settings.tagsFilter,
@@ -91,8 +87,6 @@ export const settings = (() => {
         (settings[key as keyof Settings] as Settings[keyof Settings]) =
           (changes[change]?.newValue ??
             defaultSettings[key as keyof Settings]) as Settings[keyof Settings];
-
-        if (key === "darkMode") applyTheme(settings[key], true);
 
         if (key === "sortMethod" || key === "tagsFilter")
           filterOptions.update((val) => {

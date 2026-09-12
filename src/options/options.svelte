@@ -31,7 +31,7 @@
 
 <header class="flex-none border-b-[1.5px] border-ink bg-panel">
   <div class="mx-auto flex max-w-3xl items-center gap-6 px-6">
-    <h1 class="opsz-lg py-3 text-[22px] leading-none">{EXT_NAME}</h1>
+    <h1 class="py-3 text-[22px] leading-none">{EXT_NAME}</h1>
 
     <nav class="ml-auto flex gap-6">
       <Tab title="General" path="general" bind:group />
@@ -44,7 +44,7 @@
 </header>
 
 <main class="flex-1 overflow-y-auto">
-  <div class="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-8">
+  <div class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-7">
     {#if group === "tags"}
       <Tags />
     {:else if group === "backup"}

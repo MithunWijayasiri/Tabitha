@@ -8,6 +8,7 @@ import {
 import type { UUID } from "crypto";
 import type { Session, SessionSummary } from "@/core/types";
 import { log } from "@/core/utils/log";
+import { countSites } from "@/core/utils/sessionSites";
 
 export function toSummary({ windows, ...summary }: Session): SessionSummary {
   return { ...summary, windowsNumber: windows.length };
@@ -25,7 +26,7 @@ class SessionStore {
   private static instance: SessionStore;
   private db!: IDBPDatabase<DB>;
   private open = false;
-  private version = 2;
+  private version = 3;
 
   constructor() {
     if (!SessionStore.instance) SessionStore.instance = this;
@@ -217,7 +218,7 @@ class SessionStore {
     }
 
     // v1 stored the session tag under `tags`; rename to `tag`
-    if (oldVersion === 1 && newVersion === 2) {
+    if (oldVersion === 1) {
       const sessionsStore = transaction.objectStore("sessions");
 
       sessionsStore.deleteIndex("tags");
@@ -237,6 +238,23 @@ class SessionStore {
       }
 
       sessionsStore.createIndex("tag", "tag", { unique: false });
+    }
+
+    // Records older than v3 predate the stored domain breakdown.
+    if (oldVersion > 0 && oldVersion < 3) {
+      const sessionsStore = transaction.objectStore("sessions");
+
+      for (
+        let cursor = await sessionsStore.openCursor();
+        cursor;
+        cursor = await cursor.continue()
+      ) {
+        const session = cursor.value;
+
+        session.sites = countSites(session.windows);
+
+        cursor.update(session);
+      }
     }
   }
 }
