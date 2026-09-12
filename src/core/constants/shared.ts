@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import type { CompressOptions, Icon } from "@/core/types";
+import type { CompressOptions, Icon, TagStyle } from "@/core/types";
 
 export const EXT_NAME = __EXT_NAME__;
 export const EXT_VER = __EXT_VER__;
@@ -45,4 +45,19 @@ export const favIconAllowedList: string[] = [
 export const favIconDisallowedList: Record<string, Icon> = {
   "about:addons": "extension",
   "about:preferences": "settings",
+};
+
+// Poster palette offered as tag swatches; new tags take the first entry.
+export const tagColors = [
+  "#b8801e",
+  "#0e5d51",
+  "#cf4630",
+  "#1c5f7a",
+  "#101a17",
+  "#f6e3be",
+];
+
+export const defaultTagStyle: TagStyle = {
+  bgColor: "#b8801e",
+  textColor: "#f6e3be",
 };

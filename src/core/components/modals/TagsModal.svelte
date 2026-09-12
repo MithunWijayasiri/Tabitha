@@ -3,20 +3,23 @@
   import { Modal, ColorInput, Tag } from "@/core/components";
   import { settings } from "@/core/state";
   import { addTag } from "@/core/utils";
+  import { defaultTagStyle } from "@/core/constants";
 
   export let open = false;
 
   let selectVal = "createANewTag";
 
-  let tag = { name: "", bgColor: "royalblue", textColor: "white" };
+  let tag = { name: "", ...defaultTagStyle };
 
   $: tag =
     !open || selectVal === "createANewTag"
-      ? { name: "", bgColor: "royalblue", textColor: "white" }
+      ? { name: "", ...defaultTagStyle }
       : {
           name: selectVal,
-          bgColor: $settings.tags[selectVal]?.bgColor ?? "royalblue",
-          textColor: $settings.tags[selectVal]?.textColor ?? "white",
+          bgColor:
+            $settings.tags[selectVal]?.bgColor ?? defaultTagStyle.bgColor,
+          textColor:
+            $settings.tags[selectVal]?.textColor ?? defaultTagStyle.textColor,
         };
 
   $: creating = selectVal === "createANewTag";
@@ -83,7 +86,7 @@
         />
       </label>
 
-      <div class="flex gap-6">
+      <div class="flex flex-col gap-4">
         <ColorInput bind:color={tag.bgColor}>Background</ColorInput>
         <ColorInput bind:color={tag.textColor}>Text</ColorInput>
       </div>

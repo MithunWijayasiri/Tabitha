@@ -5,7 +5,7 @@
 
 <section>
   {#if title}
-    <h2 class="opsz-lg text-lg leading-none">{title}</h2>
+    <h2 class="text-lg leading-none">{title}</h2>
   {/if}
 
   {#if description}

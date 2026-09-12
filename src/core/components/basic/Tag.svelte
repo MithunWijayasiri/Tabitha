@@ -1,9 +1,10 @@
 <script lang="ts">
   import { tooltip } from "@/core/utils";
   import type { TagStyle } from "@/core/types";
+  import { defaultTagStyle } from "@/core/constants";
 
-  export let bgColor: TagStyle["bgColor"] = "royalblue";
-  export let textColor: TagStyle["textColor"] = "white";
+  export let bgColor: TagStyle["bgColor"] = defaultTagStyle.bgColor;
+  export let textColor: TagStyle["textColor"] = defaultTagStyle.textColor;
   export let name: string;
 
   let className = "";

@@ -44,7 +44,7 @@ export default defineConfig({
 
     fontFamily: {
       sans: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
-      display: "Fraunces, Georgia, 'Times New Roman', serif",
+      display: "Oswald, 'Arial Narrow', 'Helvetica Neue', sans-serif",
       mono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
     },
   },

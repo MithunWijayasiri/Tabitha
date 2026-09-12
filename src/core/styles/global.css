@@ -53,13 +53,7 @@ body {
 
 h1,
 h2 {
-  @apply font-display font-semibold tracking-tight;
-  font-variation-settings: "opsz" 24;
-}
-
-/* Fraunces has an opsz axis; 20px and up needs the display cut. */
-.opsz-lg {
-  font-variation-settings: "opsz" 72;
+  @apply font-display font-semibold;
 }
 
 /* Lives here, not in popup.css — the options page uses it too. */

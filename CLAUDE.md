@@ -88,7 +88,7 @@ State (`src/core/state/`) are IIFE-wrapped singletons exposing a curated API, no
 
 Two channels, both required:
 
-1. `browser.storage.local.onChanged` → `settings.onStorageChange` fans changes into the store, with side-effects on `darkMode` (theme) and `sortMethod`/`tagsFilter` (filter options). `selectionId` is **not** handled here — selection sync is channel B's job.
+1. `browser.storage.local.onChanged` → `settings.onStorageChange` fans changes into the store, with side-effects on `sortMethod`/`tagsFilter` (filter options). `selectionId` is **not** handled here — selection sync is channel B's job.
 2. `browser.runtime.sendMessage({ message: 'dbChanged', sessions, selectedId })` → every context's `sessions` store listens, re-`set`s, and re-selects. Sent by `notify()` on every mutation (`add`/`put`/`remove`/`removeAll`/`select`), and by background after auto-save. The `sessions.select()` wrapper also selects locally, so selection updates without a storage echo.
 
 `sendMessage` (`src/core/utils/messages.ts`) is an adapter over `browser.runtime.sendMessage` typed as a discriminated `Message` union; "no receiver" errors are swallowed internally (normal when no extension page is open). Background also accepts `openWindow` / `openTab` / `restoreSession` / `scheduleAutoSave` messages.
@@ -120,9 +120,9 @@ Anything else is rejected with an error notification. `exportCompressed` setting
 
 ### Styling
 
-UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are **HSL CSS custom properties** with `<alpha-value>` placeholders, defined in `src/core/styles/global.css` and mapped one-to-one in `uno.config.ts`. Tokens are **semantic, not a numeric scale**: `page` / `panel` / `panel-alt` / `line` for surfaces, `ink` / `ink-muted` / `ink-faint` for text, `accent` / `accent-focus` / `accent-soft` / `accent-content` for the teal, plus `ochre` / `success` / `danger` / `link` / `tooltip`. Never reintroduce `surface-1..6`. Dark mode toggles via `applyTheme` (`src/core/utils/theme.ts`) adding `.dark` to `body`, not via UnoCSS dark variant config.
+UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are **HSL CSS custom properties** with `<alpha-value>` placeholders, defined in `src/core/styles/global.css` and mapped one-to-one in `uno.config.ts`. Tokens are **semantic, not a numeric scale**: `page` / `panel` / `panel-alt` / `line` for surfaces, `ink` / `ink-muted` / `ink-faint` for text, `accent` / `accent-focus` / `accent-soft` / `accent-content` for the teal, plus `ochre` / `success` / `danger` / `link` / `tooltip`. Never reintroduce `surface-1..6`. **Light only** — there is no dark palette, no `.dark` class and no `darkMode` setting; all three were removed deliberately, the poster identity has no dark variant.
 
-Fonts are self-hosted in `public/font/` and registered in `src/core/styles/fonts.css`: Inter (`font-sans`) and **Fraunces** (`font-display`, variable `opsz` 9–144). `font-mono` is a system stack with no file — it carries every uppercase micro-label (`.label` in `global.css`) and every count. Fraunces is optical-size aware: `h1`/`h2` default to `opsz 24`; add `.opsz-lg` for anything set at 20px or larger.
+Fonts are self-hosted in `public/font/` and registered in `src/core/styles/fonts.css`: Inter (`font-sans`) and **Oswald** (`font-display`, variable weight 200–700, split into `Oswald.woff2` latin + `Oswald-ext.woff2` latin-ext by `unicode-range`). `h1`/`h2` pick up `font-display` globally. `font-mono` is a system stack with no file — it carries every uppercase micro-label (`.label` in `global.css`) and every count.
 
 Shared classes: `.label` lives in `global.css` because both the popup and the options page use it. `.facts`, `.rule` and `.tool` live in `popup.css`, which **only the popup entry imports** — anything the options page needs must go in `global.css`.
 

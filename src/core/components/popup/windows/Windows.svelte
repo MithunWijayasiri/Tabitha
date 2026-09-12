@@ -39,7 +39,7 @@
     <div
       class="flex flex-none items-baseline gap-2.5 border-b border-line px-5 py-2.5"
     >
-      <h2 class="opsz-lg min-w-0 truncate text-[19px] leading-tight">
+      <h2 class="min-w-0 truncate text-[19px] leading-tight">
         {current ? "Current session" : $session.title}
       </h2>
 
