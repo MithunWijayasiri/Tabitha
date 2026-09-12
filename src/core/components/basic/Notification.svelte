@@ -48,6 +48,9 @@
 
       <p class="py-2 text-xs font-semibold text-ink">
         {detail.msg}
+        {#if detail.detail}
+          <span class="font-normal text-ink-muted">{detail.detail}</span>
+        {/if}
       </p>
 
       <IconButton

@@ -56,6 +56,8 @@ export type Icon =
 export interface UiNotification {
   type: "info" | "success" | "warning" | "error";
   msg: string;
+  /* Cause behind msg. Shown next to it and logged - never the only thing that matters. */
+  detail?: string;
   duration?: number;
 }
 

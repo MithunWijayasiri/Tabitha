@@ -95,7 +95,7 @@
 
     <IconButton
       icon="rename"
-      title="Rename"
+      title="Rename session"
       class="text-base text-ink-muted hover:text-accent-focus"
       on:click={async () => {
         await selected.select(session);
@@ -122,7 +122,7 @@
 
     <IconButton
       icon="delete"
-      title="Delete"
+      title="Delete session"
       class="text-base text-ink-muted hover:text-danger"
       on:click={async () => {
         await selected.select(session);

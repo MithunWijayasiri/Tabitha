@@ -23,10 +23,12 @@
   onDestroy(() => clearTimeout(timer));
 
   // A transient notification outranks the standing hint.
+  let message: UiNotification | undefined;
+
   $: message =
     toast ??
     ($currentSessionSaved
-      ? ({ type: "info", msg: "No changes since the last save" } as const)
+      ? { type: "info", msg: "Change a tab before saving again" }
       : undefined);
 
   $: band =
@@ -54,7 +56,10 @@
           in:fly|global={{ y: 8, duration: 200, easing: cubicOut }}
         >
           <span class="h-3.5 w-1 flex-none rounded-full {band}"></span>
-          <p class="truncate text-xs font-semibold text-ink">{message.msg}</p>
+          <p class="flex-none text-xs font-semibold text-ink">{message.msg}</p>
+          {#if message.detail}
+            <p class="truncate text-xs text-ink-muted">{message.detail}</p>
+          {/if}
         </div>
       {/key}
     {/if}

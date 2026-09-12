@@ -63,7 +63,10 @@ export const sessions = (() => {
 
   async function add(session: Session) {
     if (!session.windows.length || !session.tabsNumber) {
-      notification.error("Failed to save empty session", "Session is empty");
+      notification.error(
+        "Open a tab before saving",
+        "This session has no tabs",
+      );
 
       return;
     }
@@ -73,7 +76,7 @@ export const sessions = (() => {
 
     if (isCurrent && signature === get(lastSaved).signature) {
       notification.error(
-        "Session already saved",
+        "Change a tab before saving again",
         "Nothing changed since the last save",
       );
 
@@ -85,7 +88,7 @@ export const sessions = (() => {
     try {
       await sessionStore.saveSession(generated);
     } catch (error) {
-      notification.error("Failed to save session", (error as Error).message);
+      notification.error("Save failed", (error as Error).message);
 
       return;
     }
@@ -115,7 +118,7 @@ export const sessions = (() => {
     try {
       await sessionStore.updateSession(target);
     } catch (error) {
-      notification.error("Failed to update session", (error as Error).message);
+      notification.error("Update failed", (error as Error).message);
 
       return;
     }
@@ -163,14 +166,14 @@ export const sessions = (() => {
 
   async function remove(target: SessionSummary) {
     if (!target || !target.id || target.id === "current")
-      return notification.error("Nothing to delete", "Select a session first");
+      return notification.error("Select a session first", "Nothing to delete");
 
     const index = get({ subscribe }).findIndex(
       (session) => session.id === target.id,
     );
 
     if (index === -1) {
-      notification.error("Nothing to delete", "Select a session first");
+      notification.error("Select a session first", "Nothing to delete");
 
       return;
     }
@@ -178,7 +181,7 @@ export const sessions = (() => {
     try {
       await sessionStore.deleteSession(target);
     } catch (error) {
-      notification.error("Failed to delete session", (error as Error).message);
+      notification.error("Delete failed", (error as Error).message);
 
       return;
     }
@@ -201,14 +204,14 @@ export const sessions = (() => {
     const length = get({ subscribe }).length;
 
     if (!length) {
-      notification.error("Nothing to delete", "Sessions are already empty");
+      notification.error("Save a session first", "Nothing to delete");
       return;
     }
 
     try {
       await sessionStore.deleteSessions();
     } catch (error) {
-      notification.error("Failed to delete sessions", (error as Error).message);
+      notification.error("Delete failed", (error as Error).message);
 
       return;
     }

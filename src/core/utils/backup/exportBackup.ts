@@ -13,16 +13,13 @@ export async function exportBackup(exportCompressed: boolean = false) {
   try {
     sessions = await sessionStore.loadSessions();
   } catch (error) {
-    notification.error("Failed to export", (error as Error).message);
+    notification.error("Export failed", (error as Error).message);
 
     return;
   }
 
   if (!sessions.length) {
-    notification.set({
-      type: "error",
-      msg: "There are no sessions to export",
-    });
+    notification.error("Save a session before exporting", "Nothing to export");
 
     return;
   }

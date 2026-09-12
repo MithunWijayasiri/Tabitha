@@ -9,7 +9,8 @@ export async function importBackup(event: Event) {
 
   if (!ext)
     return notification.error(
-      "Unsupported file. Import accepts .tab and .tab.json only.",
+      "Choose a .tab or .tab.json file",
+      "Unsupported file type",
     );
 
   try {
@@ -19,12 +20,12 @@ export async function importBackup(event: Event) {
 
     if (!sessions?.length)
       return notification.error(
-        "Nothing to import",
-        "Invalid or corrupt backup file",
+        "Choose a valid backup file",
+        "This file is empty or corrupt",
       );
 
     await sessionStore.saveSessions(sessions);
   } catch (error) {
-    notification.error("Failed to import", (error as Error).message);
+    notification.error("Import failed", (error as Error).message);
   }
 }
