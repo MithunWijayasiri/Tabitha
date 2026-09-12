@@ -55,7 +55,8 @@ export function createCurrentSessionReader(
   let timeout: NodeJS.Timeout | undefined;
   let detach: (() => void) | undefined;
   let settled = false;
-  let generation = 0;
+  let started = 0;
+  let committed = 0;
   let resolveReady!: () => void;
 
   const ready = new Promise<void>((resolve) => {
@@ -63,12 +64,15 @@ export function createCurrentSessionReader(
   });
 
   async function read() {
-    const token = ++generation;
+    const token = ++started;
 
     try {
       const session = await ports.read();
 
-      if (token !== generation) return; // a newer read already committed
+      // Reads overlap: only a result newer than the last committed one wins.
+      if (token < committed) return;
+
+      committed = token;
 
       ports.store.set(session);
 
@@ -77,7 +81,7 @@ export function createCurrentSessionReader(
       // console, not log: log reaches the constants module, which needs the browser API.
       console.error("current session read failed:", error);
     } finally {
-      if (token === generation && !settled) {
+      if (!settled) {
         settled = true;
 
         resolveReady();

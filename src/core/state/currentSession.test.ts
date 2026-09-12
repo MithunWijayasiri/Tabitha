@@ -101,11 +101,9 @@ describe("createCurrentSessionReader", () => {
     expect(select).toHaveBeenCalledWith(session);
   });
 
-  it("keeps the newest read when an older one resolves last", async () => {
+  /** Two overlapping reads, left pending so the test picks the settle order. */
+  async function overlappingReads() {
     vi.useFakeTimers();
-
-    const stale = liveSession();
-    const fresh = liveSession();
 
     const resolvers: ((session: Session) => void)[] = [];
 
@@ -113,15 +111,24 @@ describe("createCurrentSessionReader", () => {
       () => new Promise<Session>((resolve) => resolvers.push(resolve)),
     );
 
-    const { store, events } = harness({ read });
+    const harnessed = harness({ read });
 
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
 
-    events().changed();
+    harnessed.events().changed();
 
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
 
     expect(resolvers).toHaveLength(2);
+
+    return { ...harnessed, resolvers };
+  }
+
+  it("keeps the newest read when an older one resolves last", async () => {
+    const { store, resolvers } = await overlappingReads();
+
+    const stale = liveSession();
+    const fresh = liveSession();
 
     resolvers[1]!(fresh);
     resolvers[0]!(stale);
@@ -129,6 +136,42 @@ describe("createCurrentSessionReader", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(get(store)).toBe(fresh);
+  });
+
+  it("commits both reads when they resolve in order", async () => {
+    const { store, resolvers } = await overlappingReads();
+
+    const first = liveSession();
+    const second = liveSession();
+
+    resolvers[0]!(first);
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(get(store)).toBe(first);
+
+    resolvers[1]!(second);
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(get(store)).toBe(second);
+  });
+
+  it("settles ready when the first read fails", async () => {
+    vi.useFakeTimers();
+
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const read = vi.fn(() => Promise.reject(new Error("no tabs API")));
+
+    const { store, ready } = harness({ read, visible: () => false });
+
+    await ready;
+
+    expect(get(store)).toBeUndefined();
+    expect(error).toHaveBeenCalled();
+
+    error.mockRestore();
   });
 
   it("still resolves the current session while the view is hidden", async () => {
