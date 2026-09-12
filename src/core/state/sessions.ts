@@ -29,12 +29,6 @@ export const sessions = (() => {
   // True while a mutation runs; a second call is dropped rather than queued.
   const busy = writable(false);
 
-  /* Signature of the current session as it was last saved, with the id it was
-     saved under so deleting that session re-enables saving. */
-  const lastSaved = writable<{ id?: Session["id"]; signature: string }>({
-    signature: "",
-  });
-
   async function exclusive<T>(action: () => Promise<T>) {
     if (get(busy)) return;
 
@@ -62,6 +56,8 @@ export const sessions = (() => {
   }
 
   async function add(session: Session) {
+    await settings.init(); // lastSaved lives in storage - never compare against a default
+
     if (!session.windows.length || !session.tabsNumber) {
       notification.error(
         "Open a tab before saving",
@@ -74,7 +70,7 @@ export const sessions = (() => {
     const isCurrent = session.id === "current";
     const signature = sessionSignature(session);
 
-    if (isCurrent && signature === get(lastSaved).signature) {
+    if (isCurrent && signature === get(settings).lastSaved.signature) {
       notification.error(
         "Change a tab before saving again",
         "Nothing changed since the last save",
@@ -93,7 +89,8 @@ export const sessions = (() => {
       return;
     }
 
-    if (isCurrent) lastSaved.set({ id: generated.id, signature });
+    if (isCurrent)
+      settings.changeSetting("lastSaved", { id: generated.id, signature });
 
     update((sessions) => {
       sessions.push(toSummary(generated));
@@ -186,7 +183,8 @@ export const sessions = (() => {
       return;
     }
 
-    if (target.id === get(lastSaved).id) lastSaved.set({ signature: "" });
+    if (target.id === get(settings).lastSaved.id)
+      settings.changeSetting("lastSaved", { signature: "" });
 
     // Re-resolved after the await: a dbChanged broadcast can replace the list mid-delete.
     update((sessions) => {
@@ -216,7 +214,7 @@ export const sessions = (() => {
       return;
     }
 
-    lastSaved.set({ signature: "" });
+    settings.changeSetting("lastSaved", { signature: "" });
 
     set([]); //Empty the array, no longer needed
 
@@ -300,7 +298,6 @@ export const sessions = (() => {
     removeAll: () => exclusive(removeAll),
     removeTab: deleteTab,
     busy: { subscribe: busy.subscribe },
-    savedSignature: derived(lastSaved, ($lastSaved) => $lastSaved.signature),
     loaded: { subscribe: loaded.subscribe },
     selection: {
       subscribe: selection.subscribe,
@@ -385,7 +382,8 @@ export const currentSession: Writable<Session> = writable();
 /* True while the current session still matches what was last saved from it -
    the save action stays disabled until a window or tab changes. */
 export const currentSessionSaved = derived(
-  [currentSession, sessions.savedSignature],
-  ([$current, $signature]) =>
-    !!$signature && sessionSignature($current) === $signature,
+  [currentSession, settings],
+  ([$current, $settings]) =>
+    !!$settings.lastSaved.signature &&
+    sessionSignature($current) === $settings.lastSaved.signature,
 );

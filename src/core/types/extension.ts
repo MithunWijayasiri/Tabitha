@@ -86,4 +86,7 @@ export interface Settings {
   sortMethod: SortMethod;
   tagsFilter: "__all__" | (string & NonNullable<unknown>);
   updated: boolean;
+  /* Last manual save of the current session. Persisted so the duplicate guard
+     survives the popup closing, and shared so every context agrees. */
+  lastSaved: { id?: SessionSummary["id"]; signature: string };
 }
