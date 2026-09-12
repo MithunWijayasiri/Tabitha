@@ -1,14 +1,9 @@
 <script lang="ts">
-  import { EXT_NAME, isPopup, resolveKeybinding } from "@/core/constants";
+  import { EXT_NAME, isPopup } from "@/core/constants";
   import { settings } from "@/core/state";
   import { openFullView } from "@utils/extension";
-  import {
-    CommandPalette,
-    Header,
-    Sessions,
-    StatusBar,
-  } from "@/core/components";
-  import { shouldIgnoreShortcut, log } from "@/core/utils";
+  import { Commands, Header, Sessions, StatusBar } from "@/core/components";
+  import { log } from "@/core/utils";
 
   shouldLoadPopup();
 
@@ -27,8 +22,6 @@
       log.error("settings init failed:", error);
     }
   }
-
-  let open = false;
 </script>
 
 <svelte:head>
@@ -37,20 +30,9 @@
   </title>
 </svelte:head>
 
-<svelte:window
-  on:keydown={(ev) => {
-    if (shouldIgnoreShortcut(ev, true)) return;
-
-    if (resolveKeybinding(ev)?.code === "KeyK") {
-      open = !open;
-      ev.preventDefault();
-    }
-  }}
-/>
-
 <Header />
 <Sessions />
 
 <StatusBar />
 
-<CommandPalette bind:open />
+<Commands />

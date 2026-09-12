@@ -1,4 +1,5 @@
 export { default as CommandPalette } from "./CommandPalette.svelte";
+export { default as Commands } from "./Commands.svelte";
 export { default as Menu } from "./Menu.svelte";
 export { default as Modal } from "./Modal.svelte";
 export { default as Notification } from "./Notification.svelte";

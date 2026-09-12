@@ -1,90 +1,23 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { currentSession, sessions, settings } from "@/core/state";
-  import { ConfirmModal, Modal } from "@/core/components";
-  import { exportBackup, sessionStore } from "@/core/utils";
-  import { openFullView, openOptions } from "@utils/extension";
-
-  interface Command {
-    title: string;
-    hint?: string;
-    run: () => void;
-  }
+  import type { Command } from "@/core/commands";
+  import { Modal } from "@/core/components";
 
   export let open = false;
-
-  const selected = sessions.selection;
-  const busy = sessions.busy;
+  export let commands: Command[] = [];
 
   let query = "";
   let inputEl: HTMLInputElement;
-
-  let confirmOpen = false;
-  let confirm = { title: "", message: "", run: () => {} };
-
-  function ask(title: string, message: string, run: () => void) {
-    confirm = { title, message, run };
-    confirmOpen = true;
-  }
 
   $: if (open) {
     query = "";
     tick().then(() => inputEl?.focus());
   }
 
-  async function duplicate() {
-    if (!$selected || $selected.id === "current") return;
-
-    const full = await sessionStore.hydrate($selected);
-
-    await sessions.add({ ...full, title: `${full.title} (copy)` });
-  }
-
-  let commands: Command[] = [];
-
-  $: commands = [
-    {
-      title: "Save current session",
-      hint: "S",
-      run: () => sessions.add($currentSession),
-    },
-    {
-      title: "Duplicate selected session",
-      run: duplicate,
-    },
-    {
-      title: "Delete selected session",
-      hint: "Delete",
-      run: () => {
-        // Snapshotted: a dbChanged broadcast can move the selection while the modal is open.
-        const target = $selected;
-
-        ask(
-          "Delete session",
-          `Delete “${target?.title ?? ""}”? This cannot be undone.`,
-          () => sessions.remove(target),
-        );
-      },
-    },
-    {
-      title: "Delete all sessions",
-      run: () =>
-        ask(
-          "Delete all sessions",
-          `Delete all ${$sessions.length} saved sessions? This cannot be undone.`,
-          sessions.removeAll,
-        ),
-    },
-    {
-      title: "Export sessions to a file",
-      run: () => exportBackup($settings.exportCompressed),
-    },
-    { title: "Open full view", run: openFullView },
-    { title: "Open settings", run: openOptions },
-  ];
-
-  $: matches = commands.filter((command) =>
-    command.title.toLowerCase().includes(query.trim().toLowerCase()),
+  $: matches = commands.filter(
+    (command) =>
+      command.palette &&
+      command.title.toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   function runCommand(command: Command) {
@@ -134,14 +67,3 @@
     {/if}
   </svelte:fragment>
 </Modal>
-
-<ConfirmModal
-  bind:open={confirmOpen}
-  title={confirm.title}
-  message={confirm.message}
-  disabled={$busy}
-  on:confirm={() => {
-    confirm.run();
-    confirmOpen = false;
-  }}
-/>

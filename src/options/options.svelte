@@ -8,26 +8,12 @@
     Backup,
     KeyboardShortcuts,
     About,
-    CommandPalette,
+    Commands,
   } from "@/core/components";
-  import { EXT_NAME, resolveKeybinding } from "@/core/constants";
-  import { shouldIgnoreShortcut } from "@/core/utils";
+  import { EXT_NAME } from "@/core/constants";
 
   let group: string;
-
-  let open = false;
 </script>
-
-<svelte:window
-  on:keydown={(ev) => {
-    if (shouldIgnoreShortcut(ev, true)) return;
-
-    if (resolveKeybinding(ev)?.code === "KeyK") {
-      open = !open;
-      ev.preventDefault();
-    }
-  }}
-/>
 
 <header class="flex-none border-b-[1.5px] border-ink bg-panel">
   <div class="mx-auto flex max-w-3xl items-center gap-6 px-6">
@@ -61,7 +47,7 @@
 
 <Notification detail={$notification} />
 
-<CommandPalette bind:open />
+<Commands />
 
 <svelte:head>
   <title>{EXT_NAME} settings</title>
