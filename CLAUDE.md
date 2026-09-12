@@ -86,6 +86,17 @@ State (`src/core/state/`) are IIFE-wrapped singletons exposing a curated API, no
 
 `filtered` is a derived store wrapped in an IIFE. `sessions.filter` cursor-scans and deserializes **every** DB record, so the last query result is cached and reused when only `sortMethod` or `tagsFilter` changed. An identical set of filter options means the run came from `sessions`, not the filter UI, which invalidates the cache. A generation counter discards stale in-flight queries.
 
+### Commands
+
+Every user action reachable by key, palette entry, or session-row button is one row of `src/core/commands.ts` — `{ id?, title, hint?, palette, run }`. `id` is a `CommandId` from `keymap.ts`; `title` and `hint` are **derived** from that binding, never written twice. Rebinding a key is a one-file edit in `src/core/constants/keymap.ts`.
+
+- `commands` is derived over a `ports` store. `provideCommandPorts(partial)` registers what a context can offer (`promptTitle`, `focusSearch`, `reveal`, `visibleSessions`) and returns the unregister callback for `onMount`. Ports are optional by design: the options page mounts no list and no search box, so `save` falls back to a timestamp title and `next`/`previous` no-op instead of failing.
+- `runCommand(id)` is the only entry point; it throws on an id nothing binds.
+- `Commands.svelte` (`basic/`) is the **single** `<svelte:window on:keydown>` — one per context, mounted by `popup.svelte` and `options.svelte`. It also renders the palette and the shared confirm modal from `paletteOpen` / `confirmRequest`.
+- `CommandPalette.svelte` is presentational: it filters the table on `palette: true` and renders `hint`.
+
+Do not add a second window keydown listener, and do not hand-write a palette hint.
+
 ### Cross-context sync
 
 Two channels, both required:

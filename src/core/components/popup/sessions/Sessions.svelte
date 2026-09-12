@@ -1,168 +1,100 @@
 <script lang="ts">
-  import {
-    currentSession,
-    filtered,
-    filterOptions,
-    sessions,
-    settings,
-  } from "@/core/state";
+  import { onMount } from "svelte";
+  import { filtered, filterOptions, sessions } from "@/core/state";
   import {
     VirtualList,
     Windows,
     InputModal,
-    ConfirmModal,
     TagsModal,
     Session,
     CurrentSession,
   } from "@/core/components";
-  import { formatTimestamp, shouldIgnoreShortcut } from "@/core/utils";
-  import { resolveKeybinding } from "@/core/constants";
+  import { provideCommandPorts, runCommand } from "@/core/commands";
 
   const selection = sessions.selection;
-  const busy = sessions.busy;
-
-  $: if ($selection && typeof scrollToIndex !== "undefined" && !isScrolled) {
-    isScrolled = true;
-    scrollToIndex(
-      $sessions.findIndex((session) => session.id === $selection.id),
-    );
-  }
-
-  let modalShow = false;
-  let modalType: "Save" | "Rename" = "Rename";
-
-  let deleteShow = false;
 
   let scrollToIndex: (index: number) => void;
 
   let isScrolled = false;
 
+  let modalShow = false;
+  let modalType: "Save" | "Rename" = "Rename";
+  let resolveTitle: ((title?: string) => void) | undefined;
+
   let tagsShow = false;
 
-  async function saveSession(title: string) {
-    const id = await sessions.add({ ...$currentSession, title });
+  $: visible = $filtered ?? [];
 
-    if (!id) return;
-
-    scrollToIndex($sessions.findIndex((session) => session.id === id));
+  $: if ($selection && typeof scrollToIndex !== "undefined" && !isScrolled) {
+    isScrolled = true;
+    reveal($selection.id);
   }
 
-  export function saveAction() {
-    modalType = "Save";
-    if ($settings.doNotAskForTitle)
-      return saveSession(formatTimestamp(Date.now()));
+  // A dismissed modal never dispatches, so the pending prompt is settled here.
+  $: if (!modalShow && resolveTitle) {
+    resolveTitle(undefined);
+    resolveTitle = undefined;
+  }
 
+  function reveal(id: string) {
+    const index = visible.findIndex((session) => session.id === id);
+
+    if (index !== -1) scrollToIndex(index);
+  }
+
+  function promptTitle(type: "Save" | "Rename") {
+    modalType = type;
     modalShow = true;
+
+    return new Promise<string | undefined>(
+      (resolve) => (resolveTitle = resolve),
+    );
   }
 
-  async function handleKeydown(ev: KeyboardEvent) {
-    if (shouldIgnoreShortcut(ev)) return;
-
-    const binding = resolveKeybinding(ev);
-
-    if (!binding) return;
-
-    switch (binding.code) {
-      case "KeyS":
-        saveAction();
-        break;
-
-      case "KeyC":
-        selection.select($currentSession);
-        break;
-
-      case "KeyE": {
-        const sessions = await $filtered;
-
-        if (!sessions.length) break;
-
-        let index =
-          sessions.findIndex((session) => session.id === $selection.id) + 1;
-
-        if (index >= sessions.length || index <= 0) index = 0;
-
-        selection.select(sessions[index]!);
-        scrollToIndex(index);
-        break;
-      }
-
-      case "KeyD": {
-        const sessions = await $filtered;
-
-        if (!sessions.length) break;
-
-        let index =
-          sessions.findIndex((session) => session.id === $selection.id) - 1;
-
-        if (index <= -1) index = sessions.length - 1;
-
-        selection.select(sessions[index]!);
-
-        scrollToIndex(index);
-        break;
-      }
-
-      case "KeyR":
-        modalType = "Rename";
-        modalShow = true;
-        break;
-
-      case "Delete":
-        deleteShow = true;
-        break;
-
-      default:
-        return;
-    }
-
-    ev.preventDefault();
-  }
+  onMount(() =>
+    provideCommandPorts({
+      promptTitle,
+      reveal,
+      visibleSessions: () => visible,
+    }),
+  );
 </script>
-
-<svelte:window on:keydown={handleKeydown} />
 
 <div class="flex min-h-0 flex-1">
   <div
     class="flex w-[280px] flex-none flex-col border-r border-line bg-panel xl:w-[340px]"
   >
-    <CurrentSession on:save={saveAction} />
+    <CurrentSession on:save={() => runCommand("save")} />
 
-    {#await $filtered}
-      <p class="px-4 py-3 text-xs text-ink-faint">Loading sessions…</p>
-    {:then list}
-      {#if list?.length}
-        <VirtualList items={list} let:item class="flex-1" bind:scrollToIndex>
-          <Session
-            session={item}
-            on:renameModal={() => {
-              modalType = "Rename";
-              modalShow = true;
-            }}
-            on:deleteModal={() => (deleteShow = true)}
-            on:tagsModal={() => (tagsShow = true)}
-          />
-        </VirtualList>
-      {:else}
-        <div class="border-t border-line px-4 py-6">
-          {#if $filterOptions.query.trim()}
-            <p class="text-xs font-medium text-ink-muted">
-              No session or tab matches “{$filterOptions.query.trim()}”.
-            </p>
-          {:else if $filterOptions.tagsFilter !== "__all__"}
-            <p class="text-xs font-medium text-ink-muted">
-              No session carries the tag “{$filterOptions.tagsFilter}”.
-            </p>
-          {:else}
-            <p class="text-xs font-medium text-ink-muted">
-              You have not saved a session yet.
-            </p>
-            <p class="mt-2 text-xs text-ink-faint">
-              Click Save to keep the windows and tabs you have open right now.
-            </p>
-          {/if}
-        </div>
-      {/if}
-    {/await}
+    {#if visible.length}
+      <VirtualList items={visible} let:item class="flex-1" bind:scrollToIndex>
+        <Session
+          session={item}
+          on:renameModal={() => runCommand("rename")}
+          on:deleteModal={() => runCommand("delete")}
+          on:tagsModal={() => (tagsShow = true)}
+        />
+      </VirtualList>
+    {:else}
+      <div class="border-t border-line px-4 py-6">
+        {#if $filterOptions.query.trim()}
+          <p class="text-xs font-medium text-ink-muted">
+            No session or tab matches “{$filterOptions.query.trim()}”.
+          </p>
+        {:else if $filterOptions.tagsFilter !== "__all__"}
+          <p class="text-xs font-medium text-ink-muted">
+            No session carries the tag “{$filterOptions.tagsFilter}”.
+          </p>
+        {:else}
+          <p class="text-xs font-medium text-ink-muted">
+            You have not saved a session yet.
+          </p>
+          <p class="mt-2 text-xs text-ink-faint">
+            Click Save to keep the windows and tabs you have open right now.
+          </p>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <Windows class="flex-1" />
@@ -171,38 +103,11 @@
 <InputModal
   bind:open={modalShow}
   type={modalType}
-  on:inputSubmit={async (event) => {
-    if (modalType === "Rename" && $selection.title !== event.detail) {
-      selection.update((value) => {
-        value.title = event.detail;
-        return value;
-      });
-
-      await sessions.put($selection);
-
-      scrollToIndex(
-        $sessions.findIndex((session) => session.id === $selection.id),
-      );
-    } else if (modalType === "Save") {
-      saveSession(event.detail);
-    }
-
+  on:inputSubmit={(event) => {
     modalShow = false;
-  }}
-/>
 
-<ConfirmModal
-  bind:open={deleteShow}
-  title="Delete session"
-  message="Delete “{$selection?.title ?? ''}”? This cannot be undone."
-  confirmLabel="Delete"
-  disabled={$busy}
-  on:confirm={async () => {
-    await sessions.remove($selection);
-
-    selection.select($currentSession);
-
-    deleteShow = false;
+    resolveTitle?.(event.detail);
+    resolveTitle = undefined;
   }}
 />
 

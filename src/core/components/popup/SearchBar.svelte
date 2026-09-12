@@ -1,23 +1,14 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { IconButton } from "@/core/components";
-  import { shouldIgnoreShortcut } from "@/core/utils";
-  import { resolveKeybinding } from "@/core/constants";
+  import { provideCommandPorts } from "@/core/commands";
 
   export let value: string;
 
   let inputEl: HTMLInputElement;
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (shouldIgnoreShortcut(event)) return;
-
-    if (resolveKeybinding(event)?.code === "KeyF") {
-      inputEl?.focus();
-      event.preventDefault();
-    }
-  }
+  onMount(() => provideCommandPorts({ focusSearch: () => inputEl?.focus() }));
 </script>
-
-<svelte:window on:keydown={handleKeydown} />
 
 <div
   class="flex w-[11.5rem] items-center gap-2 rounded border border-line bg-field px-2 py-1 focus-within:border-accent"

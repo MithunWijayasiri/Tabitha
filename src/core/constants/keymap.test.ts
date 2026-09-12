@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keymap, resolveKeybinding } from "./keymap";
+import { bindingFor, keymap, resolveKeybinding } from "./keymap";
 
 describe("keymap", () => {
   it("resolves a plain key to its binding", () => {
@@ -29,5 +29,17 @@ describe("keymap", () => {
       "KeyD",
       "Delete",
     ]);
+  });
+
+  it("gives every binding a unique command id", () => {
+    const ids = keymap.map((binding) => binding.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("resolves a command id back to its binding", () => {
+    expect(bindingFor("delete").code).toBe("Delete");
+    // @ts-expect-error deliberately outside CommandId
+    expect(() => bindingFor("nope")).toThrow();
   });
 });
