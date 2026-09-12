@@ -32,7 +32,7 @@ export interface CurrentSessionPorts {
   selectedId: () => UUID | "current";
   /** Re-selects the freshly read session when "current" is the selection. */
   select: (session: Session) => void;
-  /** Drops a tab from the live selection. */
+  /** Drops a tab from the live session. */
   removeTab: (windowIndex: number, tab?: BrowserTab) => void;
 }
 
@@ -55,6 +55,7 @@ export function createCurrentSessionReader(
   let timeout: NodeJS.Timeout | undefined;
   let detach: (() => void) | undefined;
   let settled = false;
+  let generation = 0;
   let resolveReady!: () => void;
 
   const ready = new Promise<void>((resolve) => {
@@ -62,8 +63,12 @@ export function createCurrentSessionReader(
   });
 
   async function read() {
+    const token = ++generation;
+
     try {
       const session = await ports.read();
+
+      if (token !== generation) return; // a newer read already committed
 
       ports.store.set(session);
 
@@ -72,7 +77,7 @@ export function createCurrentSessionReader(
       // console, not log: log reaches the constants module, which needs the browser API.
       console.error("current session read failed:", error);
     } finally {
-      if (!settled) {
+      if (token === generation && !settled) {
         settled = true;
 
         resolveReady();

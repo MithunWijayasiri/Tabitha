@@ -101,6 +101,36 @@ describe("createCurrentSessionReader", () => {
     expect(select).toHaveBeenCalledWith(session);
   });
 
+  it("keeps the newest read when an older one resolves last", async () => {
+    vi.useFakeTimers();
+
+    const stale = liveSession();
+    const fresh = liveSession();
+
+    const resolvers: ((session: Session) => void)[] = [];
+
+    const read = vi.fn(
+      () => new Promise<Session>((resolve) => resolvers.push(resolve)),
+    );
+
+    const { store, events } = harness({ read });
+
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+    events().changed();
+
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+    expect(resolvers).toHaveLength(2);
+
+    resolvers[1]!(fresh);
+    resolvers[0]!(stale);
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(get(store)).toBe(fresh);
+  });
+
   it("still resolves the current session while the view is hidden", async () => {
     const { session, store, select, watch, ready } = harness({
       visible: () => false,

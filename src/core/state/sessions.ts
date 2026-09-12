@@ -94,7 +94,19 @@ export const sessions = (() => {
 
     select: (session) => selection.set(session),
 
-    removeTab: deleteTab,
+    // The live session, never the selection: a saved session may be selected
+    // when a window closes, and deleteTab would persist the removal into it.
+    removeTab: (windowIndex, tab) => {
+      const live = get(currentSession);
+
+      if (!live) return;
+
+      removeTab(live, windowIndex, tab);
+
+      currentSession.set(live);
+
+      if (get(settings).selectionId === "current") selection.set(live);
+    },
   });
 
   load();
@@ -116,7 +128,8 @@ export const sessions = (() => {
   async function add(session: Session) {
     await settings.init(); // lastSaved lives in storage - never compare against a default
 
-    if (!session.windows.length || !session.tabsNumber) {
+    // Optional: a failed current-session read leaves the store undefined.
+    if (!session?.windows?.length || !session.tabsNumber) {
       notification.error(
         "Open a tab before saving",
         "This session has no tabs",
@@ -285,6 +298,9 @@ export const sessions = (() => {
   }
 
   async function select(session: SessionSummary) {
+    // Callers fall back to currentSession, which is undefined if its read failed.
+    if (!session) return;
+
     settings.changeSetting("selectionId", session.id);
 
     await selectById(session.id);
