@@ -78,9 +78,11 @@ Plus **discarded** (`src/discarded/`) — a stub page used for lazy tab restore.
 Two separate persistence layers — do not conflate:
 
 - **Settings** → `browser.storage.local` via `src/core/utils/storage.ts` — all keys prefixed `tabitha.` (single choke point: `getStorageItem`/`getStorage`/`setStorage`). Shape is `Settings` (`src/core/types/extension.ts`); defaults live in the `settings` store IIFE.
-- **Sessions** → IndexedDB via `SessionStore` singleton (`src/core/utils/database.ts`). DB `tabitha`, version 2, keyPath `id` (UUID), indexes `title` / `dateSaved` / `tag`.
+- **Sessions** → IndexedDB via `SessionStore` singleton (`src/core/utils/database.ts`). DB `tabitha`, version 3, keyPath `id` (UUID), indexes `title` / `dateSaved` / `tag`.
 
 State (`src/core/state/`) are IIFE-wrapped singletons exposing a curated API, not raw writables. `sessions` owns load/add/put/remove/removeAll/removeTab/selection; `settings` owns `changeSetting`; `tags` and `sessions.loaded` are derived.
+
+`currentSession` is produced by `src/core/state/currentSession.ts`, not by a component: `createCurrentSessionReader(ports)` owns the tab/window listeners, the 50ms debounce and the `getSession` call, and takes every browser effect as an injected port so it is testable in `vitest` (`currentSession.test.ts`). `sessions.ts` wires the real ports and is the only place that decides **where** "current" is read — every context that loads the store, options page included. `sessions.load()` awaits `current.ready`, so a `selectionId` of `current` resolves against a session that has been read rather than an empty store. `ready` settles after the first read **attempt**, failure included — otherwise one `getSession` rejection would leave `load()` pending and `loaded` false forever. A failed first read therefore leaves `currentSession` `undefined`: `sessions.add` and `sessions.select` guard for it, and anything else reading `get(currentSession)` must too.
 
 `filtered` is a derived store wrapped in an IIFE. `sessions.filter` cursor-scans and deserializes **every** DB record, so the last query result is cached and reused when only `sortMethod` or `tagsFilter` changed. An identical set of filter options means the run came from `sessions`, not the filter UI, which invalidates the cache. A generation counter discards stale in-flight queries.
 
@@ -97,7 +99,7 @@ Two channels, both required:
 
 Session lists hold **hundreds** of tabs; hydrated windows must never be resident in list context. The type system enforces this:
 
-- `SessionSummary` (`src/core/types/extension.ts`) — list shape: `title`, `tabsNumber`, `windowsNumber`, `dateSaved`, `dateModified`, `id`, `tag`. **No `windows` property.**
+- `SessionSummary` (`src/core/types/extension.ts`) — list shape: `title`, `tabsNumber`, `windowsNumber`, `dateSaved`, `dateModified`, `id`, `tag`, `sites`. **No `windows` property.** `sites` is a `SiteCount[]` of top domains counted once at save time, so a list row can show a domain breakdown without holding windows.
 - `Session extends SessionSummary` — hydrated shape with real `windows: BrowserWindow[]`. Held only by `sessions.selection` and `currentSession`.
 
 Rules:
@@ -139,6 +141,6 @@ Declared **twice** and must be kept in sync: `tsconfig.json` `paths` and `vite.c
 Bullets below change how you write code against these modules.
 
 - `settings.init()` has a `loaded` re-entrancy guard that resolves to `{} as Settings` after first run; the comment in `sessions.load` notes unresolved Firefox/Chrome inconsistency.
-- `SessionStore.upgradeSessions` only handles the 1→2 migration; any schema bump needs a real migration path.
+- `SessionStore.upgradeSessions` handles 1→2 (`tags` → `tag`, index swapped) and →3 (backfills `sites` via `countSites`); any further schema bump needs a new branch. It is passed as a bare callback (`upgrade: this.upgradeSessions`) and so must never touch `this`.
 - `compress.ts` returns `undefined` on Chromium by design — all call sites must optional-chain.
 - `sessions.put()` fails loud (`log.error`) when the target id is not in the store — mutate store contents only through the store API (`sessions.put`/`sessions.removeTab`), never by editing list items in place.

@@ -14,10 +14,15 @@ import {
   sendMessage,
   filterTagsAndSort,
   sessionSignature,
+  getSession,
+  isExtensionViewed,
   log,
   type Message,
 } from "@/core/utils";
+import { createCurrentSessionReader } from "./currentSession";
 import browser from "webextension-polyfill";
+
+export const currentSession: Writable<Session> = writable();
 
 export const sessions = (() => {
   const { subscribe, set, update }: Writable<SessionSummary[]> = writable([]);
@@ -41,6 +46,69 @@ export const sessions = (() => {
     }
   }
 
+  /*
+   * The current session is read in every context that loads this store, popup row
+   * or not: the palette offers "save current session" everywhere, and a value
+   * snapshotted at load time would save the wrong tabs. No component owns it.
+   */
+  const current = createCurrentSessionReader({
+    store: currentSession,
+
+    read: async () => {
+      await settings.init(); // the filters come from storage - never from the defaults
+
+      const { excludePinned, urlFilterList } = get(settings);
+
+      return getSession({
+        pinned: excludePinned ? false : undefined,
+        url: urlFilterList,
+      });
+    },
+
+    watch: (events) => {
+      browser.windows.onFocusChanged.addListener(events.changed);
+      browser.tabs.onCreated.addListener(events.changed);
+      browser.tabs.onUpdated.addListener(events.changed);
+      browser.tabs.onActivated.addListener(events.changed);
+      browser.tabs.onMoved.addListener(events.changed);
+      browser.tabs.onDetached.addListener(events.changed);
+      browser.tabs.onRemoved.addListener(events.removed);
+
+      return () => {
+        browser.windows.onFocusChanged.removeListener(events.changed);
+        browser.tabs.onCreated.removeListener(events.changed);
+        browser.tabs.onUpdated.removeListener(events.changed);
+        browser.tabs.onActivated.removeListener(events.changed);
+        browser.tabs.onMoved.removeListener(events.changed);
+        browser.tabs.onDetached.removeListener(events.changed);
+        browser.tabs.onRemoved.removeListener(events.removed);
+      };
+    },
+
+    visible: isExtensionViewed,
+
+    onVisibilityChange: (handler) =>
+      document.addEventListener("visibilitychange", handler),
+
+    selectedId: () => get(settings).selectionId,
+
+    select: (session) => selection.set(session),
+
+    // The live session, never the selection: a saved session may be selected
+    // when a window closes, and deleteTab would persist the removal into it.
+    removeTab: (windowIndex, tab) => {
+      const live = get(currentSession);
+
+      if (!live) return;
+
+      removeTab(live, windowIndex, tab);
+
+      currentSession.set(live);
+
+      if (get(settings).selectionId === "current") selection.set(live);
+    },
+  });
+
   load();
 
   async function load() {
@@ -50,6 +118,8 @@ export const sessions = (() => {
 
     const { selectionId } = get(settings);
 
+    await current.ready; // "current" holds no value until the first read lands
+
     selectById(selectionId);
 
     loaded.set(true);
@@ -58,7 +128,8 @@ export const sessions = (() => {
   async function add(session: Session) {
     await settings.init(); // lastSaved lives in storage - never compare against a default
 
-    if (!session.windows.length || !session.tabsNumber) {
+    // Optional: a failed current-session read leaves the store undefined.
+    if (!session?.windows?.length || !session.tabsNumber) {
       notification.error(
         "Open a tab before saving",
         "This session has no tabs",
@@ -227,6 +298,9 @@ export const sessions = (() => {
   }
 
   async function select(session: SessionSummary) {
+    // Callers fall back to currentSession, which is undefined if its read failed.
+    if (!session) return;
+
     settings.changeSetting("selectionId", session.id);
 
     await selectById(session.id);
@@ -377,8 +451,6 @@ export const tags = derived(sessions, ($sessions) => {
 
   return tagsList;
 });
-
-export const currentSession: Writable<Session> = writable();
 
 /* True while the current session still matches what was last saved from it -
    the save action stays disabled until a window or tab changes. */

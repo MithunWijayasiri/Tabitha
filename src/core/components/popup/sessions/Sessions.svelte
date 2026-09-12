@@ -40,9 +40,7 @@
   let tagsShow = false;
 
   async function saveSession(title: string) {
-    $currentSession.title = title;
-
-    const id = await sessions.add($currentSession);
+    const id = await sessions.add({ ...$currentSession, title });
 
     if (!id) return;
 

@@ -1,18 +1,14 @@
 <script lang="ts">
-  import browser from "webextension-polyfill";
-  import { createEventDispatcher, onDestroy } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import {
-    settings,
     sessions,
     currentSessionSaved,
     currentSession as session,
   } from "@/core/state";
-  import { countSites, getSession, isExtensionViewed } from "@/core/utils";
+  import { countSites } from "@/core/utils";
   import { SiteChips } from "@/core/components";
 
   const dispatch = createEventDispatcher();
-
-  let timeout: NodeJS.Timeout;
 
   const selection = sessions.selection;
   const busy = sessions.busy;
@@ -23,82 +19,6 @@
   $: tabsCount = $session?.tabsNumber ?? 0;
 
   $: sites = countSites($session?.windows ?? []);
-
-  document.addEventListener("visibilitychange", handleVisibility);
-
-  settings.init().then(handleVisibility);
-
-  onDestroy(() => {
-    removeEvents();
-
-    document.removeEventListener("visibilitychange", handleVisibility);
-  });
-
-  function handleVisibility() {
-    if (isExtensionViewed()) {
-      handleUpdate();
-      addEvents();
-      return;
-    }
-
-    removeEvents();
-  }
-
-  function addEvents() {
-    browser.windows.onFocusChanged.addListener(handleUpdate);
-    browser.tabs.onCreated.addListener(handleUpdate);
-    browser.tabs.onUpdated.addListener(handleUpdate);
-    browser.tabs.onActivated.addListener(handleUpdate);
-    browser.tabs.onMoved.addListener(handleUpdate);
-    browser.tabs.onDetached.addListener(handleUpdate);
-    browser.tabs.onRemoved.addListener(handleRemoval);
-  }
-
-  function removeEvents() {
-    browser.windows.onFocusChanged.removeListener(handleUpdate);
-    browser.tabs.onCreated.removeListener(handleUpdate);
-    browser.tabs.onUpdated.removeListener(handleUpdate);
-    browser.tabs.onActivated.removeListener(handleUpdate);
-    browser.tabs.onMoved.removeListener(handleUpdate);
-    browser.tabs.onDetached.removeListener(handleUpdate);
-    browser.tabs.onRemoved.removeListener(handleRemoval);
-  }
-
-  function handleRemoval(
-    tabId: number,
-    removeInfo: browser.Tabs.OnRemovedRemoveInfoType,
-  ) {
-    const windowIndex = $session.windows.findIndex(
-      (window) => window.id === removeInfo.windowId,
-    );
-
-    if (windowIndex === -1) return;
-
-    if (removeInfo.isWindowClosing) return sessions.removeTab(windowIndex);
-
-    const window = $session.windows[windowIndex]!;
-
-    const tab = window.tabs?.find((t) => t.id === tabId);
-
-    if (!tab) return;
-
-    sessions.removeTab(windowIndex, tab);
-  }
-
-  async function handleUpdate() {
-    clearTimeout(timeout);
-
-    //should fix inconsistency in update flags
-    timeout = setTimeout(async () => {
-      $session = await getSession({
-        pinned: $settings.excludePinned ? false : undefined,
-        url: $settings.urlFilterList,
-      });
-
-      if ($settings.selectionId === "current")
-        selection.selectById($session.id);
-    }, 50);
-  }
 </script>
 
 <div
