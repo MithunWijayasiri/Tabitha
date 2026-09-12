@@ -140,10 +140,15 @@ export const sessions = (() => {
     }
 
     if (session.id === "current") {
-      const result = await saveSession({
-        source: "popup",
-        title: session.title,
-      });
+      let result;
+
+      try {
+        result = await saveSession({ source: "popup", title: session.title });
+      } catch (error) {
+        notification.error("Save failed", (error as Error).message);
+
+        return;
+      }
 
       if (result.status === "empty") {
         notification.error(
