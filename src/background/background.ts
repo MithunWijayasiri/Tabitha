@@ -32,11 +32,24 @@ createTimer();
 browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "tabitha-autosave") {
     try {
-      const session = await getSession();
+      const {
+        excludePinned,
+        urlFilterList: url,
+        lastAutoSaved,
+      } = await getStorage({
+        excludePinned: true,
+        urlFilterList: undefined,
+        lastAutoSaved: "",
+      } as Settings);
+
+      const session = await getSession({
+        pinned: excludePinned ? false : undefined,
+        url,
+      });
+
+      if (!session.tabsNumber) return;
 
       const signature = sessionSignature(session);
-
-      const { lastAutoSaved } = await getStorage({ lastAutoSaved: "" });
 
       /* Skips the whole run, eviction included: an idle browser would otherwise
          fill autoSaveMaxSessions with copies and evict real older snapshots. */
