@@ -17,6 +17,7 @@ import {
   getSession,
   isExtensionViewed,
   log,
+  saveSession,
   type Message,
 } from "@/core/utils";
 import { createCurrentSessionReader } from "./currentSession";
@@ -138,16 +139,48 @@ export const sessions = (() => {
       return;
     }
 
-    const isCurrent = session.id === "current";
-    const signature = sessionSignature(session);
+    if (session.id === "current") {
+      let result;
 
-    if (isCurrent && signature === get(settings).lastSaved.signature) {
-      notification.error(
-        "Change a tab before saving again",
-        "Nothing changed since the last save",
-      );
+      try {
+        result = await saveSession({ source: "popup", title: session.title });
+      } catch (error) {
+        notification.error("Save failed", (error as Error).message);
 
-      return;
+        return;
+      }
+
+      if (result.status === "empty") {
+        notification.error(
+          "Open a tab before saving",
+          "This session has no tabs",
+        );
+
+        return;
+      }
+
+      if (result.status === "unchanged") {
+        notification.error(
+          "Change a tab before saving again",
+          "Nothing changed since the last save",
+        );
+
+        return;
+      }
+
+      const generated = result.session;
+
+      update((sessions) => {
+        sessions.push(toSummary(generated));
+
+        return sessions;
+      });
+
+      select(generated);
+
+      notification.success("Session saved");
+
+      return generated.id;
     }
 
     const generated = generateSession(session);
@@ -159,9 +192,6 @@ export const sessions = (() => {
 
       return;
     }
-
-    if (isCurrent)
-      settings.changeSetting("lastSaved", { id: generated.id, signature });
 
     update((sessions) => {
       sessions.push(toSummary(generated));
