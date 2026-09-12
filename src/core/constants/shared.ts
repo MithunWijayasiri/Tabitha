@@ -59,5 +59,5 @@ export const tagColors = [
 
 export const defaultTagStyle: TagStyle = {
   bgColor: "#b8801e",
-  textColor: "#f6e3be",
+  textColor: "#101a17",
 };
