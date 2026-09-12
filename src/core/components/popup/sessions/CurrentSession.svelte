@@ -2,7 +2,8 @@
   import browser from "webextension-polyfill";
   import { createEventDispatcher, onDestroy } from "svelte";
   import { settings, sessions, currentSession as session } from "@/core/state";
-  import { getSession, isExtensionViewed } from "@/core/utils";
+  import { countSites, getSession, isExtensionViewed } from "@/core/utils";
+  import { SiteChips } from "@/core/components";
 
   const dispatch = createEventDispatcher();
 
@@ -14,6 +15,8 @@
 
   $: windowsCount = $session?.windows?.length ?? 0;
   $: tabsCount = $session?.tabsNumber ?? 0;
+
+  $: sites = countSites($session?.windows ?? []);
 
   document.addEventListener("visibilitychange", handleVisibility);
 
@@ -112,6 +115,8 @@
       <span class="sep">&middot;</span>
       <span>{tabsCount} {tabsCount === 1 ? "tab" : "tabs"}</span>
     </span>
+
+    <SiteChips {sites} tabsNumber={tabsCount} />
   </button>
 
   <button

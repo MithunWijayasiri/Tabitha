@@ -8,6 +8,11 @@
   @apply text-ink-faint/50;
 }
 
+/* Domain breakdown pill under a session row. */
+.chip {
+  @apply flex flex-none items-center gap-1 whitespace-nowrap rounded-sm border border-line px-1.5 py-0.5 font-mono text-[10px] leading-none text-ink-muted;
+}
+
 .rule {
   @apply h-px flex-1 bg-line;
 }

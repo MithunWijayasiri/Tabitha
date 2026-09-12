@@ -5,6 +5,7 @@ import { sessionStore } from "@/core/utils/database";
 import { generateSession } from "@/core/utils/generateSession";
 import { getStorage, setStorage } from "@/core/utils/storage";
 import { log } from "@/core/utils/log";
+import { formatTimestamp } from "@/core/utils/formatTimestamp";
 import { autoSaveDefaults } from "@/core/constants/shared";
 import type { Session, Settings } from "@/core/types";
 import { sendMessage, type Message } from "@/core/utils/messages";
@@ -82,7 +83,7 @@ browser.contextMenus.onClicked.addListener(async ({ menuItemId }, tab) => {
   } as Settings);
 
   const pinned = excludePinned ? false : undefined;
-  const title = "Unnamed session";
+  const title = formatTimestamp(Date.now());
 
   switch (menuItemId) {
     case "tabitha-save":

@@ -15,7 +15,7 @@
     Session,
     CurrentSession,
   } from "@/core/components";
-  import { shouldIgnoreShortcut } from "@/core/utils";
+  import { formatTimestamp, shouldIgnoreShortcut } from "@/core/utils";
   import { resolveKeybinding } from "@/core/constants";
 
   const selection = sessions.selection;
@@ -48,7 +48,8 @@
 
   export function saveAction() {
     modalType = "Save";
-    if ($settings.doNotAskForTitle) return saveSession("Unnamed session");
+    if ($settings.doNotAskForTitle)
+      return saveSession(formatTimestamp(Date.now()));
 
     modalShow = true;
   }

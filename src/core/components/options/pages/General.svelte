@@ -39,7 +39,7 @@
 <Section title="Saving sessions">
   <Switch
     title="Skip the name prompt when saving"
-    description="Saves straight away under the name “Unnamed session”. Rename it later."
+    description="Saves straight away, named with the date and time. Rename it later."
     checked={$settings.doNotAskForTitle}
     on:change={() => {
       settings.changeSetting("doNotAskForTitle", !$settings.doNotAskForTitle);

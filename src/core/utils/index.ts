@@ -13,6 +13,8 @@ export * from "./backup";
 export * from "./handleFilterListChange";
 export * from "./getRelativeTime";
 export * from "./getDomain";
+export * from "./sessionSites";
+export * from "./formatTimestamp";
 export * from "./input";
 export * from "./sessionsFilters";
 export * from "./scrollbar";
