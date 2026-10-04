@@ -15,6 +15,7 @@ colors:
   ink-soft: "#4a5b55"
   ink-faint: "#7f8d87"
   mint: "#60cdb5"
+  mint-light: "#8fe3d0"
   ochre: "#b8801e"
 typography:
   wordmark:
@@ -138,8 +139,10 @@ components:
     borderColor: rgba(16, 26, 23, 0.55)
     cursor: not-allowed
   eyebrow:
-    textColor: "{colors.mint}"
+    textColor: "{colors.paper}"
     typography: "{typography.eyebrow}"
+  eyebrow-on-deep:
+    textColor: "{colors.mint-light}"
   eyebrow-on-paper:
     textColor: "{colors.tomato}"
   device:
@@ -203,11 +206,12 @@ Sampled from the banner, reconciled with the extension's real tokens.
 - **Pine `#2c7a6b`** — the page ground. The banner's teal.
 - **Pine-deep `#0e5d51`** — plate fills and badge discs. This is the extension's own `--accent`, so it ties page to product.
 - **Pine-dark `#0a3f37`** — the footer band and the halftone dots.
-- **Cream `#f6e3be`** — poster ink: body copy on teal, keylines, chips, buttons.
-- **Paper `#fbf6e9`** — product surfaces only. Any cream panel signals "this is the software."
+- **Cream `#f6e3be`** — poster ink: keylines, chips, buttons, text on the deep plates and footer.
+- **Paper `#fbf6e9`** — product surfaces: any cream panel signals "this is the software." Also the text colour on the plain pine ground, where cream falls under 4.5:1.
 - **Tomato `#cf4630`** — the banner's polka-dot red. One accent, used sparingly: primary CTA, eyebrows on paper, step numbers, the footer heart.
 - **Ink `#101a17`** — every keyline and hard offset shadow. Near-black, never pure black.
-- **Mint `#60cdb5`** — from `assets/logo-glyph.svg`. Eyebrows on teal, focus rings, checkmarks.
+- **Mint `#60cdb5`** — from `assets/logo-glyph.svg`. Focus rings, checkmarks, code comments.
+- **Mint-light `#8fe3d0`** — a lighter mint for eyebrows on pine-deep plates (5.2:1).
 - **Ochre `#b8801e`** — the ALPHA warning badge and one tag band. The only warning colour.
 
 Do not add a fifth hue. The palette is already wide; new colours dilute the banner match.
@@ -266,7 +270,7 @@ Sample data must be plausible and internally consistent: counts in the header eq
 
 ### Plates and eyebrows
 
-Every plate opens with an eyebrow — a short uppercase Oswald line in mint (on teal) or tomato (on paper) — then an uppercase Oswald `h2`. Eyebrows name something true about the content; they are not decoration.
+Every plate opens with an eyebrow — a short uppercase Oswald line in paper (on pine), mint-light (on pine-deep) or tomato (on paper) — then an uppercase Oswald `h2`. Eyebrows name something true about the content; they are not decoration.
 
 ### Buttons
 
