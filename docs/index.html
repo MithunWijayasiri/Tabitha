@@ -57,6 +57,7 @@
         --ink-soft: #4a5b55;
         --ink-faint: #7f8d87;
         --mint: #60cdb5;
+        --mint-light: #8fe3d0;
         --ochre: #b8801e;
 
         --plate-radius: 14px;
@@ -84,7 +85,7 @@
       body {
         margin: 0;
         background: var(--pine);
-        color: var(--cream);
+        color: var(--paper);
         font-family: Inter, system-ui, sans-serif;
         font-size: 16px;
         line-height: 1.6;
@@ -176,7 +177,11 @@
         text-transform: uppercase;
         line-height: 1;
         margin: 0 0 14px;
-        color: var(--mint);
+        color: var(--paper);
+      }
+
+      .plate--deep .eyebrow {
+        color: var(--mint-light);
       }
 
       .plate--paper .eyebrow {
@@ -275,7 +280,7 @@
         font-size: clamp(16px, 2vw, 19px);
         max-width: 46ch;
         margin-bottom: 30px;
-        color: var(--cream);
+        color: var(--paper);
       }
 
       .cta-row {
@@ -1963,7 +1968,7 @@
       <!-- ============ SHORTCUTS ============ -->
       <section class="plate lift" aria-labelledby="keys-h">
         <p class="eyebrow">Hands stay on the keyboard</p>
-        <h2 id="keys-h" style="color: var(--cream)">
+        <h2 id="keys-h" style="color: var(--paper)">
           Eight keys, no menu diving
         </h2>
         <p class="muted" style="margin-bottom: 26px">
