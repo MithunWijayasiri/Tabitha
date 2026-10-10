@@ -30,7 +30,7 @@ Owned by `src/core/state/currentSession.ts`, not by a component.
 
 - `createCurrentSessionReader(ports)` holds the tab/window listeners, the 50 ms debounce and the `getSession` call, taking every browser effect as an injected port so it is testable (`currentSession.test.ts`).
 - `sessions.ts` wires the real ports and is the only place deciding **where** "current" is read — in every context that loads the store, options included.
-- `load()` awaits `current.ready`, so `selectionId: "current"` resolves against a session actually read.
+- `load()` awaits `current.ready`, so `selectionId: "current"` never resolves before the first read has been tried.
 - `ready` settles after the first read **attempt**, failure included — gating it on success would leave `load()` pending and `loaded` false forever after one rejection.
 - Failed read → `currentSession` is `undefined`. `sessions.add` and `sessions.select` guard for it, and so must any other reader of `get(currentSession)`.
 
