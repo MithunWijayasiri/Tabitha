@@ -11,3 +11,5 @@ Own formats only:
 - `.tab.json` — JSON envelope `{ tabitha: 1, sessions }` via `TextDecoder`
 
 Both decode in `decodeSsf.ts`. Anything else is rejected with an error notification. `exportCompressed` picks `.tab` vs `.tab.json` on write.
+
+Backup files live on users' disks indefinitely. Format change → bump the version (`TBTH1` magic / `tabitha: 1` envelope) and keep decoding every older version.

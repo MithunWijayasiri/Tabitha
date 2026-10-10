@@ -2,7 +2,7 @@
 
 Tabitha — browser extension for saving, managing and restoring sessions, windows and tabs.
 
-Stack: Svelte 5 + TypeScript + Vite 8 + UnoCSS + `idb` (IndexedDB) + `webextension-polyfill`. npm. Build mode is `ALPHA` while major version `< 1`. Firefox ID `tabitha@tabitha` is a placeholder — change before AMO submission. Most components are legacy Svelte-4 style; `Notification.svelte` is the only runes-mode one. Legacy reactive rules are satisfied by mutating store state through the store API (`sessions.selection.update`).
+Stack: Svelte 5 + TypeScript + Vite 8 + UnoCSS + `idb` (IndexedDB) + `webextension-polyfill`. npm. Build mode is `ALPHA` while major version `< 1`. Firefox ID `tabitha@mithunwijayasiri.dev` (`tools/constants.ts`) — never change it after AMO release; it identifies the add-on for updates. Most components are legacy Svelte-4 style; `Notification.svelte` is the only runes-mode one. Legacy reactive rules are satisfied by mutating store state through the store API (`sessions.selection.update`).
 
 ## Commands
 
@@ -76,6 +76,9 @@ Path-scoped, loaded when a matching file is read — `.claude/rules/`:
 - `styling.md` — UnoCSS tokens, fonts, shared classes (light only)
 - `backup.md` — `.tab` / `.tab.json` import/export
 - `options-page.md` — hash router, adding a page
+- `background.md` — MV3 service worker / Firefox event page lifecycle
+- `manifest-and-permissions.md` — permissions, remote code, CSP, AMO source review
+- `persisted-data.md` — settings keys and IndexedDB schema migrations
 - `rough-edges.md` — known quirks in `src/core` and `src/background`
 
 Change contradicts or extends a rule (or this file) → update it in the same change; new area-specific invariant → add it to the matching rule, not here.
