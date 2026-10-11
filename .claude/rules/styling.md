@@ -7,7 +7,7 @@ paths:
 
 # Styling
 
-UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are HSL custom properties with `<alpha-value>` placeholders in `src/core/styles/global.css`, mapped one-to-one in `uno.config.ts`.
+UnoCSS `presetUno` + `transformerDirectives` + `transformerVariantGroup`. Theme colors are raw HSL triplets (`--accent: 171 74% 21%`) in `src/core/styles/global.css`, mapped one-to-one in `uno.config.ts` as `hsl(var(--name) / <alpha-value>)`.
 
 Tokens are **semantic, not a numeric scale**:
 

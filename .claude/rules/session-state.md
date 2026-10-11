@@ -17,7 +17,7 @@ Stores (`src/core/state/`) are IIFE singletons exposing a curated API, not raw w
 
 Every `sessions` mutation — `add`, `addBackup`, `put`, `remove`, `removeAll`, `removeTab` — goes through one FIFO queue (`createSerializer`, `src/core/utils/serialize.ts`); background holds a second instance for its alarm and context-menu handlers.
 
-- Queued, never dropped: `add` returning `undefined` means the save failed, never that it was skipped.
+- Queued, never dropped by the queue. `add` returns `undefined` when nothing was saved — empty session, unchanged since `lastSaved`, or a failed write — each path notifies the user. Callers treat `undefined` as "no new id", not as failure.
 - `busy` is true from enqueue until the queue drains.
 - New mutation → add it to the queue, not beside it.
 - Internal callers (`put` → `remove`, `deleteTab` → `put`) use the raw functions — a queued call from inside a queued slot deadlocks.
