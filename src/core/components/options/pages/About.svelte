@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Section } from "@/core/components";
-  import { EXT_NAME, EXT_VER, EXT_MODE } from "@/core/constants";
+  import { EXT_NAME, EXT_VER, EXT_MODE, EXT_REPO } from "@/core/constants";
 </script>
 
 <Section>
@@ -21,5 +21,19 @@
         <dd class="font-mono text-xs text-ochre">{EXT_MODE}</dd>
       </div>
     {/if}
+
+    <div class="flex items-center gap-4 border-t border-line py-3">
+      <dt class="label flex-1">GitHub</dt>
+      <dd class="text-sm font-medium">
+        <a
+          href={EXT_REPO}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-link hover:underline"
+        >
+          MithunWijayasiri/Tabitha
+        </a>
+      </dd>
+    </div>
   </dl>
 </Section>

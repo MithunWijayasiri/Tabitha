@@ -4,6 +4,7 @@ import type { CompressOptions, Icon, TagStyle } from "@/core/types";
 export const EXT_NAME = __EXT_NAME__;
 export const EXT_VER = __EXT_VER__;
 export const EXT_MODE = __EXT_MODE__;
+export const EXT_REPO = "https://github.com/MithunWijayasiri/Tabitha";
 
 export const isDEV = import.meta.env.DEV;
 
