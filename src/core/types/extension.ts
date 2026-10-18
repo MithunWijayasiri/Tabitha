@@ -51,6 +51,7 @@ export type Icon =
   | "untag"
   | "search"
   | "settings"
+  | "github"
   | "sort";
 
 export interface UiNotification {

@@ -1,0 +1,132 @@
+name: Release
+
+# Manually-triggered release. Builds Chrome + Firefox packages, optionally signs
+# the Firefox build via AMO, and publishes a GitHub pre-release - but only after
+# check, lint and tests pass.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, e.g. 0.1.0 (a leading "v" is stripped)'
+        required: true
+        type: string
+      release_branch:
+        description: "Branch to release from"
+        required: true
+        default: "main"
+        type: string
+      firefox_sign:
+        description: "Sign the Firefox build via AMO (needs AMO_JWT_ISSUER / AMO_JWT_SECRET secrets)"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Check, Lint & Test
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_branch }}
+          persist-credentials: false
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm test
+
+  release:
+    name: Build & Release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_BRANCH: ${{ inputs.release_branch }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+
+      - name: Resolve version
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          version="${INPUT_VERSION#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+            { echo "Version must look like 1.2.3, got: $INPUT_VERSION"; exit 1; }
+          git rev-parse -q --verify "refs/tags/v$version" >/dev/null &&
+            { echo "Tag v$version already exists"; exit 1; }
+          npm version "$version" --no-git-tag-version --allow-same-version
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Both builds write to dist/, so each one is packaged before the next.
+      - name: Package Chrome
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          npm run build
+          mkdir -p release
+          (cd dist && zip -qr "../release/tabitha-chrome-v${VERSION}.zip" .)
+
+      - name: Package Firefox
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          npm run build:ff
+          (cd dist && zip -qr "../release/tabitha-firefox-v${VERSION}.zip" .)
+
+      # Pushed before signing: AMO accepts a version number only once, so a push
+      # failure after signing would burn the version.
+      - name: Commit version bump and tag
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): v${VERSION}" || echo "Nothing to commit"
+          git tag "v${VERSION}"
+          git push origin "HEAD:${RELEASE_BRANCH}"
+          git push origin "v${VERSION}"
+
+      - name: Sign Firefox build (AMO)
+        if: ${{ inputs.firefox_sign }}
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          npx web-ext sign --source-dir dist --artifacts-dir signed --channel unlisted
+          mv signed/*.xpi "release/tabitha-firefox-v${VERSION}.xpi"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" release/* \
+            --title "Tabitha v${VERSION}" \
+            --generate-notes \
+            --prerelease

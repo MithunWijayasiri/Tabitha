@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { EXT_NAME, isPopup } from "@/core/constants";
+  import { EXT_NAME, EXT_REPO, isPopup } from "@/core/constants";
   import { filterOptions, sessions } from "@/core/state";
   import { SearchBar, IconButton, Sorting, TagFilter } from "@/core/components";
   import { openFullView, openOptions } from "@utils/extension";
@@ -43,6 +43,16 @@
         <IconButton icon="open" role="img" class="text-lg" />
       </button>
     {/if}
+
+    <a
+      href={EXT_REPO}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="tool"
+      use:tooltip={{ title: "GitHub" }}
+    >
+      <IconButton icon="github" role="img" class="text-lg" />
+    </a>
 
     <button
       type="button"
